@@ -21,6 +21,7 @@ ib-gateway/root/Jts/*/readme.txt
 ib-gateway/Dockerfile 
 docker-compose-app.yml
 docker-compose-local-live.yml
+docker-compose-local-test.yml
 docker-compose-server-live.yml
 docker-compose-server-test.yml 
 docker-compose.yml
