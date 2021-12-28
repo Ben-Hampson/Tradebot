@@ -4,18 +4,16 @@
 workflows
 
 # --- Don't upload the secret sauce! ---
-.env
 app/env
-app/src/.env
-app/src/crypto.py
-app/src/data.db
-app/src/database.py
-app/src/startup.py
-app/src/stocks.py
-app/src/subsystems.py
-# Unsure if I need to hide this, but it might have IB account data:
+# app/src/crypto.py
+# app/src/data.db
+# app/src/database.py
+# app/src/startup.py
+# app/src/stocks.py
+# app/src/subsystems.py
+# # Unsure if I need to hide this, but it might have IB account data:
 ib-gateway/ib/jts.ini
-# These 3 readmes have account names in them:
+# # These 3 readmes have account names in them:
 ib-gateway/root/Jts/*/readme.txt
 # Dockerfile contains SSH?!
 ib-gateway/Dockerfile 
@@ -25,6 +23,7 @@ docker-compose-local-test.yml
 docker-compose-server-live.yml
 docker-compose-server-test.yml 
 docker-compose.yml
+data.db
 
 
 # --- Boilerplate .gitignore ---
