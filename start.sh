@@ -3,8 +3,9 @@ echo "Welcome to tradebot 2.2"
 service cron start
 service cron status
 which python3
-python3 --version
+which poetry
+poetry run python --version
 echo "Updating database"
-python3 /tmp/src/startup.py
+poetry run python /tmp/src/startup.py
 echo "Starting server"
-python3 /tmp/src/app.py
+poetry run python /tmp/src/app.py

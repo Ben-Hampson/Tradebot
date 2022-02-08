@@ -5,12 +5,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/London
 
 # Install any Python package requirements
-COPY requirements.txt /tmp/
-RUN pip install -r /tmp/requirements.txt
+COPY pyproject.toml poetry.lock /tmp/
 COPY src/ /tmp/src
 
 # Cron
-RUN apt-get -qq update -y && apt-get -qq install -y cron
+RUN apt-get -qq update -y && apt-get -qq install -y cron curl \
+    && curl -sSL https://install.python-poetry.org | python3 -
+RUN poetry install --no-dev
 COPY root /etc/cron.d/root
 RUN chmod 0644 /etc/cron.d/root
 RUN crontab /etc/cron.d/root
