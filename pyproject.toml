@@ -5,7 +5,7 @@ description = ""
 authors = ["Ben Hampson"]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.8,<3.11"
 fastapi = "^0.70.1"
 python-binance = "^1.0.15"
 numpy = "^1.21.5"
@@ -15,6 +15,12 @@ python-decouple = "^3.5"
 pytz = "^2021.3"
 exchange-calendars = "^3.5"
 forex-python = "^1.8"
+uvicorn = "^0.17.4"
+ib-insync = "^0.9.70"
+newtulipy = "^0.4.6"
+yahoo-fin = "^0.8.9"
+pandas-datareader = "^0.10.0"
+matplotlib = "^3.5.1"
 
 [tool.poetry.dev-dependencies]
 black = "^21.12b0"
