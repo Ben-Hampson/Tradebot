@@ -52,4 +52,4 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
 
       - name: Pull image and restart tradebot
-        run: cd /home/${{ secrets.SSH_USER }}/tradebot && docker-compose pull && docker-compose up -d
+        run: ssh staging 'cd /home/${{ secrets.SSH_USER }}/tradebot && docker-compose pull && docker-compose up -d'
