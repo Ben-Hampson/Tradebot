@@ -3,13 +3,12 @@ import math
 import pathlib
 import os
 from datetime import date, timedelta
-from configparser import ConfigParser
 from decimal import Decimal
 from pprint import pprint
 
 from binance.client import Client
 from forex_python.converter import CurrencyCodes, CurrencyRates
-from decouple import config
+import os
 
 import telegram_bot as tg
 from calc import round_decimals_down
@@ -43,7 +42,7 @@ def main():
         trading_mode = 'Paper'
 
     # Binance Connect
-    client = Client(config('BI_API_KEY'), config('BI_API_SECRET'), tld='com')
+    client = Client(os.getenv('BI_API_KEY'), os.getenv('BI_API_SECRET'), tld='com')
 
     # Note: Currently set up for Binance Futures only. NOT spot.
     for sub in subsystems.db:

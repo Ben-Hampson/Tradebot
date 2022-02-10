@@ -10,13 +10,10 @@ import matplotlib.pyplot as plt
 import telegram_bot as tg
 from datetime import datetime, timedelta, date
 from pathlib import Path
-from decouple import config
+import os
 from time_checker import time_check
 
 def connect():
-    # path = Path(__file__).parent
-    # APP_DB = path / 'data.db'
-
     path = Path(__file__).parent.parent
     APP_DB = path.joinpath('data/data.db')
 
@@ -149,7 +146,7 @@ def get_Binance_data(empty: bool, latestDate: str):
             data = requests.get('https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD' + 
                                 '&limit=' + str(limit) + 
                                 '&toTs=' + str(toTimestamp) + 
-                                '&api_key=' + config('CC_API_KEY')).json()
+                                '&api_key=' + os.getenv('CC_API_KEY')).json()
 
             for bar in reversed(data['Data']['Data']):
                 timestamp = datetime.fromtimestamp(bar['time'])
@@ -184,7 +181,7 @@ def get_Binance_data(empty: bool, latestDate: str):
         data = requests.get('https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD' + 
                                 '&limit=' + str(limit) + 
                                 '&toTs=' + str(toTimestamp) + 
-                                '&api_key=' + config('CC_API_KEY')).json()
+                                '&api_key=' + os.getenv('CC_API_KEY')).json()
 
         for bar in reversed(data['Data']['Data'][1:]):  # The API returns one more than you asked for, so ignore the first
             timestamp = datetime.fromtimestamp(bar['time'])
@@ -207,7 +204,7 @@ def get_Binance_data(empty: bool, latestDate: str):
 def get_AlphaVantage_data(symbol: str, data_symbol: str, empty: bool, latestDate: str):
     data = pdr.av.time_series.AVTimeSeriesReader(symbols=data_symbol, 
                                           function='TIME_SERIES_DAILY_ADJUSTED', 
-                                          api_key=config('AV_API_KEY')).read()
+                                          api_key=os.getenv('AV_API_KEY')).read()
 
     data['date'] = data.index
     data['date'] = data.date.apply(lambda x: datetime.strptime(x, "%Y-%m-%d").date())
@@ -591,6 +588,7 @@ def test(symbol:str):
 if __name__ == '__main__':
     """Populate the database from scratch or update it, depending on its status."""
     create_database() # If the tables are already there, it'll do nothing.
+
     for sub in subsystems.db:
         symbol = sub['symbol']
         

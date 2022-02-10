@@ -2,10 +2,10 @@ import telegram
 import re
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
-from decouple import config
+import os
 
-bot = telegram.Bot(token=config('TELEGRAM_TOKEN'))
-updater = Updater(token=config('TELEGRAM_TOKEN'), use_context=True)
+bot = telegram.Bot(token=os.getenv('TELEGRAM_TOKEN'))
+updater = Updater(token=os.getenv('TELEGRAM_TOKEN'), use_context=True)
 dispatcher = updater.dispatcher
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -31,7 +31,7 @@ def formatter(text):
 # Outbound Messages
 def outbound(message):
     message = formatter(message)
-    bot.send_message(chat_id=config('TELEGRAM_CHAT_ID'), text=message, parse_mode=telegram.ParseMode.MARKDOWN_V2)
+    bot.send_message(chat_id=os.getenv('TELEGRAM_CHAT_ID'), text=message, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 outbound_handler = MessageHandler(Filters.text & (~Filters.command), outbound)
 dispatcher.add_handler(outbound_handler)
 
