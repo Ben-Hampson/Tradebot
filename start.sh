@@ -4,6 +4,6 @@ service cron start
 service cron status
 poetry run python --version
 echo "Updating database"
-poetry run python /tmp/src/startup.py
+poetry run python /home/src/startup.py
 echo "Starting server"
-poetry run python /tmp/src/app.py
+poetry run python /home/src/app.py
