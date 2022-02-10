@@ -14,9 +14,12 @@ from decouple import config
 from time_checker import time_check
 
 def connect():
-    path = Path(__file__).parent
-    APP_DB = path / 'data.db'
-    
+    # path = Path(__file__).parent
+    # APP_DB = path / 'data.db'
+
+    path = Path(__file__).parent.parent
+    APP_DB = path.joinpath('data/data.db')
+
     connection = sqlite3.connect(APP_DB)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()

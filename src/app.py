@@ -11,7 +11,6 @@ from fastapi import FastAPI
 from ib_insync import IB, MarketOrder, Stock, util
 
 import crypto
-import stocks
 import testbed
 
 app = FastAPI()

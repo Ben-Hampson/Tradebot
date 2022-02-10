@@ -7,4 +7,4 @@ IB_GATEWAY_URLPORT=4003
 
 0,15,30,45 * * * * /usr/local/bin/python /tmp/src/database.py >> /tmp/logs/database.log 2>&1
 5,20,35,50 * * * * /usr/local/bin/python /tmp/src/crypto.py >> /tmp/logs/crypto.log 2>&1
-10,25,40,55 * * * * /usr/local/bin/python /tmp/src/stocks.py >> /tmp/logs/stocks.log 2>&1
+

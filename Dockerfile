@@ -8,6 +8,7 @@ WORKDIR /home
 
 # Install any Python package requirements
 COPY src/ ./src
+RUN mkdir -p /home/data
 
 # Cron
 ENV PATH="/root/.local/bin:$PATH"
@@ -21,7 +22,7 @@ RUN crontab /etc/cron.d/root
 COPY /start.sh .
 RUN chmod +x ./start.sh
 
-COPY pyproject.toml poetry.lock .
+COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-dev
 
 CMD ["/bin/bash", "/home/start.sh"]
