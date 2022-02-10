@@ -16,6 +16,7 @@ ib-gateway/root/Jts/*/readme.txt
 ib-gateway/Dockerfile 
 docker-compose*.yml
 data.db
+.python-version
 
 
 # --- Boilerplate .gitignore ---

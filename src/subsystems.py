@@ -21,55 +21,7 @@ db = [
         'forecast_time': [6, 0],  # CryptoCompare closes are at 00:00 GMT
         'time_zone': 'Europe/London',
         'exchange_iso': ''        # For trading_calendars. Unnecessary for crypto.
-    },
-    {
-        'symbol':'XUKX',
-        'type': 'stock',
-        'broker':'IB',
-        'data_source': 'Alpha Vantage',
-        'data_symbol': 'XUKX.LON',
-        'currency':'GBP',
-        'broker-weight':0.5,
-        'overall-weight':0.33,
-        'block':1,
-        'idm':'',
-        'order_time': [10, 0],      
-        'forecast_time': [5, 0], 
-        'time_zone': 'Europe/London',
-        'exchange_iso': 'XLON'
-    },
-    {
-        'symbol':'CMOP',
-        'type': 'stock',
-        'broker':'IB',
-        'data_source': 'Alpha Vantage',
-        'data_symbol': 'CMOD.LON',
-        'currency':'GBP',
-        'broker-weight':0.5,
-        'overall-weight':0.33,
-        'block':1,
-        'idm':'',
-        'order_time': [10, 0],      
-        'forecast_time': [5, 0], 
-        'time_zone': 'Europe/London',
-        'exchange_iso': 'XLON'
-    }#,
-    # {
-    #     'symbol':'TSLA',
-    #     'type': 'stock',
-    #     'broker':'IB',
-    #     'data_source': 'Alpha Vantage',
-    #     'data_symbol': 'TSLA',
-    #     'currency':'USD',
-    #     'broker-weight':0.5,
-    #     'overall-weight':0.33,
-    #     'block':1,
-    #     'idm':'',
-    #     'order_time': [10, 30],      
-    #     'forecast_time': [5, 0], 
-    #     'time_zone': 'America/New_York',
-    #     'exchange_iso': 'XNYS'  # TSLA is listed on the NASDAQ.
-    # }                           # trading_caldendars treats that as the same as the NYSE.
+    }
 ]
 
 if __name__ == '__main__':

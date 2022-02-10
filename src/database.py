@@ -611,8 +611,6 @@ if __name__ == '__main__':
                 dates_closes = get_Binance_data(empty, latestDate)
             elif sub['data_source'] == 'Yahoo':
                 dates_closes = get_YFinance_data(symbol, data_symbol, empty, latestDate)
-            elif sub['data_source'] == 'Alpha Vantage':
-                dates_closes = get_AlphaVantage_data(symbol, data_symbol, empty, latestDate)
 
             # Update table with closes, EMAs, forecast, and instrument risk
             insert_closes_into_table(symbol, dates_closes)
