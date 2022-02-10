@@ -43,6 +43,7 @@ jobs:
           Host staging
             HostName $SSH_HOST
             User $SSH_USER
+            Port $SSH_PORT
             IdentityFile ~/.ssh/staging.key
             StrictHostKeyChecking no
           END
@@ -50,6 +51,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_KEY: ${{ secrets.SSH_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
 
       - name: Pull image and restart tradebot
         run: ssh staging 'cd /home/${{ secrets.SSH_USER }}/tradebot && docker-compose pull && docker-compose up -d'
