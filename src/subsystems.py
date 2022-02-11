@@ -7,22 +7,22 @@
 
 db = [
     {
-        'symbol':'BTCUSDT',
-        'type': 'crypto',
-        'broker':'Binance',
-        'data_source': 'Binance',
-        'data_symbol': '',
-        'currency':'USDT',
-        'broker-weight':1,
-        'overall-weight':0.33,
-        'block':'',
-        'idm':'',
-        'order_time': [7, 0],      
-        'forecast_time': [6, 0],  # CryptoCompare closes are at 00:00 GMT
-        'time_zone': 'Europe/London',
-        'exchange_iso': ''        # For trading_calendars. Unnecessary for crypto.
+        "symbol": "BTCUSDT",
+        "type": "crypto",
+        "broker": "Binance",
+        "data_source": "Binance",
+        "data_symbol": "",
+        "currency": "USDT",
+        "broker-weight": 1,
+        "overall-weight": 0.33,
+        "block": "",
+        "idm": "",
+        "order_time": [7, 0],
+        "forecast_time": [6, 0],  # CryptoCompare closes are at 00:00 GMT
+        "time_zone": "Europe/London",
+        "exchange_iso": "",  # For trading_calendars. Unnecessary for crypto.
     }
 ]
 
-if __name__ == '__main__':
-    print('Instruments.py running')
+if __name__ == "__main__":
+    print("Instruments.py running")

@@ -1,6 +1,7 @@
 import math
 
-def round_decimals_down(number:float, decimals:int=2):
+
+def round_decimals_down(number: float, decimals: int = 2):
     """
     Returns a value rounded down to a specific number of decimal places.
     """
