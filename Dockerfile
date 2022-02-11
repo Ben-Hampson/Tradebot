@@ -8,7 +8,8 @@ WORKDIR /home
 
 # Install any Python package requirements
 COPY src/ ./src
-RUN mkdir -p /home/data
+RUN mkdir -p /home/data \
+    && mkdir -p /home/logs
 
 # Cron
 ENV PATH="/root/.local/bin:$PATH"

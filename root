@@ -3,8 +3,6 @@
 # because those scripts check whether any subsystems require the script to fully run yet.
 
 TRADING_MODE=live       # Env variables, because the Python scripts run by cron don't inherit the docker-compose variables.
-IB_GATEWAY_URLPORT=4003
 
-0,15,30,45 * * * * /usr/local/bin/python /tmp/src/database.py >> /tmp/logs/database.log 2>&1
-5,20,35,50 * * * * /usr/local/bin/python /tmp/src/crypto.py >> /tmp/logs/crypto.log 2>&1
-
+0,15,30,45 * * * * /venv/bin/python /home/src/database.py >> /home/logs/database.log 2>&1
+5,20,35,50 * * * * /venv/bin/python /home/src/crypto.py >> /home/logs/crypto.log 2>&1
