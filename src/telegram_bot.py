@@ -5,13 +5,13 @@ import re
 import telegram
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 
-bot = telegram.Bot(token=os.getenv("TELEGRAM_TOKEN"))
-updater = Updater(token=os.getenv("TELEGRAM_TOKEN"), use_context=True)
-dispatcher = updater.dispatcher
-
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
+
+bot = telegram.Bot(token=os.getenv("TELEGRAM_TOKEN"))
+updater = Updater(token=os.getenv("TELEGRAM_TOKEN"), use_context=True)
+dispatcher = updater.dispatcher
 
 def start(update, context):
     """For command '/start', return a message."""
@@ -19,13 +19,12 @@ def start(update, context):
         chat_id=update.effective_chat.id, text="Hello, I am tradebot!"
     )
 
-start_handler = CommandHandler("start", start)
-dispatcher.add_handler(start_handler)
 
 def formatter(text: str) -> str:
     """Format messages to make sure they don't cause an error."""
     text = re.sub(r"([\[\]()~`>#+-=|{}.!])", r"\\\1", text)
     return text
+
 
 def outbound(message: str):
     """Send a Telegram message."""
@@ -40,5 +39,14 @@ def outbound(message: str):
 outbound_handler = MessageHandler(Filters.text & (~Filters.command), outbound)
 dispatcher.add_handler(outbound_handler)
 
-if __name__ == "__main__":
+def main():
+    """Run Telegram bot."""
+    start_handler = CommandHandler("start", start)
+    dispatcher.add_handler(start_handler)
+    
     updater.start_polling()
+    updater.idle()
+
+
+if __name__ == "__main__":
+    main()
