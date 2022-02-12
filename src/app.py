@@ -1,3 +1,5 @@
+"""API. Currently not being used."""
+
 import logging
 
 import uvicorn
@@ -10,6 +12,7 @@ logging.basicConfig(
 )
 
 log = logging.getLogger(__name__)
+
 
 @app.get("/")
 async def root():

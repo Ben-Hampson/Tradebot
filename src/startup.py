@@ -1,3 +1,5 @@
+"""Script to run on server startup. Create or updates with subsystems."""
+
 import logging
 
 import database as db

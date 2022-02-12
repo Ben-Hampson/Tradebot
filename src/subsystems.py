@@ -1,3 +1,5 @@
+"""Subsystems aka portfolio."""
+
 # For order_time and forecast_time, avoid 00:00-04:00 due to DST.
 # Times are relative to the given time_zone.
 # Times are [hour, minute]. No leading zeroes.

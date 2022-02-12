@@ -1,3 +1,5 @@
+"""Check if the exchange is open and if it's the determined time to update data or order."""
+
 import datetime
 import logging
 

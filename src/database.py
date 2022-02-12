@@ -1,3 +1,5 @@
+"""Run strategy for subsystems and update the database."""
+
 import logging
 import os
 import sqlite3

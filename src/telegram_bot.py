@@ -1,3 +1,5 @@
+"""Telegram bot. Sends messages and handles commands."""
+
 import logging
 import os
 import re
@@ -12,6 +14,7 @@ logging.basicConfig(
 bot = telegram.Bot(token=os.getenv("TELEGRAM_TOKEN"))
 updater = Updater(token=os.getenv("TELEGRAM_TOKEN"), use_context=True)
 dispatcher = updater.dispatcher
+
 
 def start(update, context):
     """For command '/start', return a message."""
@@ -39,11 +42,12 @@ def outbound(message: str):
 outbound_handler = MessageHandler(Filters.text & (~Filters.command), outbound)
 dispatcher.add_handler(outbound_handler)
 
+
 def main():
     """Run Telegram bot."""
     start_handler = CommandHandler("start", start)
     dispatcher.add_handler(start_handler)
-    
+
     updater.start_polling()
     updater.idle()
 

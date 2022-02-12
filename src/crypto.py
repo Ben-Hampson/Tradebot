@@ -1,3 +1,5 @@
+"""Check strategy and, if correct, make an order for crypto subsystems."""
+
 import logging
 import os
 from datetime import date, timedelta
