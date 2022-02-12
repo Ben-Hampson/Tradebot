@@ -1,8 +1,9 @@
-import telegram
-import re
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import os
+import re
+
+import telegram
+from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 
 bot = telegram.Bot(token=os.getenv("TELEGRAM_TOKEN"))
 updater = Updater(token=os.getenv("TELEGRAM_TOKEN"), use_context=True)

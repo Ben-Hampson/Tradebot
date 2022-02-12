@@ -1,16 +1,15 @@
+import os
 import sqlite3
-import subsystems
-import requests
+from datetime import datetime, timedelta
+from pathlib import Path
+
 import numpy as np
-import pandas as pd
+import requests
 import tulipy as ti
 import yahoo_fin.stock_info as si
-import pandas_datareader as pdr
-import matplotlib.pyplot as plt
+
+import subsystems
 import telegram_bot as tg
-from datetime import datetime, timedelta, date
-from pathlib import Path
-import os
 from time_checker import time_check
 
 
@@ -122,7 +121,7 @@ def check_table_status(symbol=str):
     return empty, up_to_date, latestDate
 
 
-def get_Binance_data(empty: bool, latestDate: str):
+def get_binance_data(empty: bool, latestDate: str):
     # Currently assumes symbol is BTCUSDT
     print(f"--- BTCUSDT: Populating Table ---")
     connection, cursor = connect()
@@ -219,41 +218,11 @@ def get_Binance_data(empty: bool, latestDate: str):
     date_array = np.flip(np.array(date_array_rev))
 
     dates_closes = list(zip(date_array, close_array))
-    print("Data:", dates_closes)
 
     return dates_closes
 
 
-def get_AlphaVantage_data(symbol: str, data_symbol: str, empty: bool, latestDate: str):
-    data = pdr.av.time_series.AVTimeSeriesReader(
-        symbols=data_symbol,
-        function="TIME_SERIES_DAILY_ADJUSTED",
-        api_key=os.getenv("AV_API_KEY"),
-    ).read()
-
-    data["date"] = data.index
-    data["date"] = data.date.apply(lambda x: datetime.strptime(x, "%Y-%m-%d").date())
-
-    # Get yesterday's date so we begin with yesterday's close (00:00)
-    today = datetime.now()
-    oneDay = timedelta(days=1)
-    yesterday = today - oneDay
-
-    if empty:
-        data = data[(data.date <= yesterday.date())]
-    else:
-        latestDate = datetime.strptime(latestDate, "%Y-%m-%d").date()
-        data = data[(data.date > latestDate) & (data.date <= yesterday.date())]
-
-    dates = [i.strftime("%Y-%m-%d") for i in data.date]
-    closes = np.around(data["close"].to_list(), 2)
-    dates_closes = list(zip(dates, closes))
-    print("Data:", dates_closes)
-
-    return dates_closes
-
-
-def get_YFinance_data(symbol: str, data_symbol: str, empty: bool, latestDate: str):
+def get_yfinance_data(symbol: str, data_symbol: str, empty: bool, latestDate: str):
     data = si.get_data(data_symbol)
 
     # Get yesterday's date so we begin with yesterday's close (00:00)
@@ -355,7 +324,7 @@ def left_pad(array: list, n: int, value):
     return array
 
 
-def calculate_EMAs(symbol: str):
+def calculate_emas(symbol: str):
     """Take an array of closes from a table and work out all the EMAs and raw forecasts."""
     print(f"--- {symbol}: Updating EMAs ---")
     connection, cursor = connect()
@@ -675,15 +644,15 @@ def test(symbol: str):
         print(f"{symbol} table NOT up to date. Updating.")
 
         if sub["data_source"] == "Binance":
-            dates_closes = get_Binance_data(empty, latestDate)
+            dates_closes = get_binance_data(empty, latestDate)
         elif sub["data_source"] == "Yahoo":
-            dates_closes = get_YFinance_data(symbol, data_symbol, empty, latestDate)
+            dates_closes = get_yfinance_data(symbol, data_symbol, empty, latestDate)
         elif sub["data_source"] == "Alpha Vantage":
             dates_closes = get_AlphaVantage_data(symbol, data_symbol, empty, latestDate)
 
         insert_closes_into_table(symbol, dates_closes)
 
-        calculate_EMAs(symbol)
+        calculate_emas(symbol)
         combined_forecast(symbol)
         instrument_risk(symbol)
 
@@ -711,14 +680,14 @@ if __name__ == "__main__":
             print(f"{symbol}: No data for yesterday. Attempting update.")
 
             if sub["data_source"] == "Binance":
-                dates_closes = get_Binance_data(empty, latestDate)
+                dates_closes = get_binance_data(empty, latestDate)
             elif sub["data_source"] == "Yahoo":
-                dates_closes = get_YFinance_data(symbol, data_symbol, empty, latestDate)
+                dates_closes = get_yfinance_data(symbol, data_symbol, empty, latestDate)
 
             # Update table with closes, EMAs, forecast, and instrument risk
             insert_closes_into_table(symbol, dates_closes)
 
-            calculate_EMAs(symbol)
+            calculate_emas(symbol)
             combined_forecast(symbol)
             instrument_risk(symbol)
 

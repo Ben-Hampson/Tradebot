@@ -1,18 +1,12 @@
-import json
-import math
-import pathlib
 import os
 from datetime import date, timedelta
-from decimal import Decimal
-from pprint import pprint
 
 from binance.client import Client
 from forex_python.converter import CurrencyCodes, CurrencyRates
-import os
 
+import subsystems
 import telegram_bot as tg
 from calc import round_decimals_down
-import subsystems
 from database import connect
 from time_checker import time_check
 

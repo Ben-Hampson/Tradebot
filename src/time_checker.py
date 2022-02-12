@@ -1,8 +1,10 @@
-import pytz
 import datetime
-from subsystems import db
+
 import exchange_calendars as ecals
 import pandas as pd
+import pytz
+
+from subsystems import db
 
 
 def time_check(symbol: str, checkpoint_type: str):
