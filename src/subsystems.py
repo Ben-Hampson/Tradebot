@@ -23,6 +23,3 @@ db = [
         "exchange_iso": "",  # For trading_calendars. Unnecessary for crypto.
     }
 ]
-
-if __name__ == "__main__":
-    print("Instruments.py running")

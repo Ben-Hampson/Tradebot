@@ -13,32 +13,22 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
-# /start
 def start(update, context):
+    """For command '/start', return a message."""
     context.bot.send_message(
         chat_id=update.effective_chat.id, text="Hello, I am tradebot!"
     )
 
-
 start_handler = CommandHandler("start", start)
 dispatcher.add_handler(start_handler)
 
-# Echo
-def echo(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
-
-
-echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
-dispatcher.add_handler(echo_handler)
-
-# Formatter
-def formatter(text):
+def formatter(text: str) -> str:
+    """Format messages to make sure they don't cause an error."""
     text = re.sub(r"([\[\]()~`>#+-=|{}.!])", r"\\\1", text)
     return text
 
-
-# Outbound Messages
-def outbound(message):
+def outbound(message: str):
+    """Send a Telegram message."""
     message = formatter(message)
     bot.send_message(
         chat_id=os.getenv("TELEGRAM_CHAT_ID"),

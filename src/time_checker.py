@@ -7,9 +7,11 @@ import pytz
 from subsystems import db
 
 
-def time_check(symbol: str, checkpoint_type: str):
+def time_check(symbol: str, checkpoint_type: str) -> bool:
     """Check the checkpoint time against the current time in the subsystem locality.
-    If within the last 15 minutes, return True. Else, return False."""
+
+    If within the last 15 minutes, return True.
+    """
     print(f"--- {symbol} ---")
 
     # Subsystem Details
@@ -57,7 +59,7 @@ def time_check(symbol: str, checkpoint_type: str):
         return False
 
 
-def exchange_open_check(symbol: str):
+def exchange_open_check(symbol: str) -> bool:
     """Check if the exchange for the given symbol is open today or not."""
     sub = next(item for item in db if item["symbol"] == symbol)
     exchange = sub["exchange_iso"]
@@ -73,9 +75,3 @@ def exchange_open_check(symbol: str):
         return exchange_open
     else:
         return False
-
-
-if __name__ == "__main__":
-    for sub in db:
-        symbol = sub["symbol"]
-        exchange_open_check(symbol)

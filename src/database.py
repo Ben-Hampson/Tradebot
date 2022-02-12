@@ -2,6 +2,7 @@ import os
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 import requests
@@ -14,6 +15,7 @@ from time_checker import time_check
 
 
 def connect():
+    """Connect to database in data/data.db"""
     path = Path(__file__).parent.parent
     APP_DB = path.joinpath("data/data.db")
 
@@ -24,7 +26,8 @@ def connect():
     return connection, cursor
 
 
-def create_database():
+def create_database() -> None:
+    """Creata tables in database if they don't already exist."""
     print(f"--- 'CREATING' TABLES ---")
 
     connection, cursor = connect()
@@ -66,11 +69,12 @@ def create_database():
     print("--- Tables 'Created' ---")
 
 
-def check_table_status(symbol=str):
-    # Get status of database records
-    # If up to date, skip to ema_BTCUSDT.py
-    # Else, go to populate_BTCUSDT.py
-    # Note: what happens if it's freshly created and empty?
+def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
+    """Get status of database records.
+    
+    If up to date, skip to ema_BTCUSDT.py
+    Else, go to populate_BTCUSDT.py
+    """
     print(f"--- {symbol} Status ---")
     connection, cursor = connect()
 
@@ -79,7 +83,6 @@ def check_table_status(symbol=str):
     oneDay = timedelta(days=1)
     yesterday = today - oneDay
     yesterday_date = yesterday.strftime("%Y-%m-%d")
-    toTimestamp = int(datetime.timestamp(yesterday))
     print(f"toTimestamp: {yesterday_date}")
 
     # Get latest records
@@ -97,17 +100,17 @@ def check_table_status(symbol=str):
         print(f"{symbol} table is EMPTY.")
         up_to_date = False
         empty = True
-        latestDate = ""
+        latest_date = ""
     else:
         # No. of Records
         print(f"{symbol} records: {len(rows)}")
 
         # Get the most recent record's date
-        latestDate = rows[-1]["date"]
-        print(f"Latest Date in {symbol} table: {latestDate}")
+        latest_date = rows[-1]["date"]
+        print(f"Latest Date in {symbol} table: {latest_date}")
 
         # Determine if table is up to date, or not, or empty
-        if latestDate == yesterday_date:
+        if latest_date == yesterday_date:
             up_to_date = True
             empty = False
             print(f"{symbol} table up to date. No update needed.")
@@ -118,11 +121,15 @@ def check_table_status(symbol=str):
 
     print(f"--- Finished checking {symbol} table ---")
 
-    return empty, up_to_date, latestDate
+    return empty, up_to_date, latest_date
 
 
-def get_binance_data(empty: bool, latestDate: str):
-    # Currently assumes symbol is BTCUSDT
+def get_binance_data(empty: bool, latest_date: str) -> list:
+    """Get Binance data for a pair.
+    
+    Currently assumes symbol is BTCUSDT.
+    Return a list of dates and daily closes.
+    """
     print(f"--- BTCUSDT: Populating Table ---")
     connection, cursor = connect()
 
@@ -180,10 +187,10 @@ def get_binance_data(empty: bool, latestDate: str):
             toTimestamp = datetime.timestamp(minusOneDay)
 
     else:  # If not empty and not up to date
-        print(f"Latest Date in BTCUSDT table: {latestDate}")
+        print(f"Latest Date in BTCUSDT table: {latest_date}")
 
         # Get latestDate in Unix Time, to use as fromTime in API request
-        last = latestDate.split("-")
+        last = latest_date.split("-")
         latestDateDT = datetime(int(last[0]), int(last[1]), int(last[2]))
 
         # Set API limit
@@ -222,7 +229,11 @@ def get_binance_data(empty: bool, latestDate: str):
     return dates_closes
 
 
-def get_yfinance_data(symbol: str, data_symbol: str, empty: bool, latestDate: str):
+def get_yfinance_data(symbol: str, data_symbol: str, empty: bool, latest_date: str) -> list:
+    """Get Yahoo Finance data for a symbol.
+    
+    Return a list of dates and daily closes.
+    """
     data = si.get_data(data_symbol)
 
     # Get yesterday's date so we begin with yesterday's close (00:00)
@@ -233,20 +244,20 @@ def get_yfinance_data(symbol: str, data_symbol: str, empty: bool, latestDate: st
     if empty:
         data = data[(data.index.date <= yesterday.date())]
     else:
-        latestDate = datetime.strptime(latestDate, "%Y-%m-%d").date()
+        latest_date = datetime.strptime(latest_date, "%Y-%m-%d").date()
         data = data[
-            (data.index.date > latestDate) & (data.index.date <= yesterday.date())
+            (data.index.date > latest_date) & (data.index.date <= yesterday.date())
         ]
 
     dates = [i.strftime("%Y-%m-%d") for i in data.index.date]
     closes = np.around(data["close"].to_list(), 2)
     dates_closes = list(zip(dates, closes))
-    print("Data:", dates_closes)
 
     return dates_closes
 
 
-def insert_closes_into_table(symbol: str, dates_closes: list):
+def insert_closes_into_table(symbol: str, dates_closes: list) -> None:
+    """Insert closes and dates into a table."""
     connection, cursor = connect()
 
     records = 0
@@ -275,7 +286,10 @@ def insert_closes_into_table(symbol: str, dates_closes: list):
 
 def ema_array(close_array: list, ema_length: int):
     """Take in an array of closes and create an EMA from it.
-    Note that tulipy populates the first n indices of the array, even though there aren't enough pieces of data for the EMA window."""
+
+    Note that tulipy populates the first n indices of the array, even though
+    there aren't enough pieces of data for the EMA window.
+    """
     # To combat that problem, later on we'll ignore the first n indices of the EMA arrays.
     ema = ti.ema(close_array, ema_length)
     ema_array = np.around(ema, 2)
@@ -288,8 +302,10 @@ def raw_forecast(
     slow_ema_array: list,
     slow_ema_length: int,
     stdev_returns_abs: list,
-):
-    """Subtract the Slow EMA from the Fast EMA and divide it by the 25 day Standard Deviation of Returns."""
+) -> list:
+    """Subtract the Slow EMA from the Fast EMA and divide it by the 25 day
+    Standard Deviation of Returns.
+    """
     # First we need to make them the same length.
     # We need to trim the start off whichever length is longest.
     difference = len(stdev_returns_abs) - (len(slow_ema_array) - slow_ema_length)
@@ -317,14 +333,17 @@ def raw_forecast(
 
 def left_pad(array: list, n: int, value):
     """Insert n elements to the start of an array.
-    Useful for making lists the same size and ensuring they go with the right dates in the table."""
+    
+    Useful for making lists the same size and ensuring they go with the right
+    dates in the table.
+    """
     for i in range(n):
         array = np.insert(array, 0, value)
 
     return array
 
 
-def calculate_emas(symbol: str):
+def calculate_emas(symbol: str) -> None:
     """Take an array of closes from a table and work out all the EMAs and raw forecasts."""
     print(f"--- {symbol}: Updating EMAs ---")
     connection, cursor = connect()
@@ -421,8 +440,8 @@ def calculate_emas(symbol: str):
     print(f"Errors: {errors}")
 
 
-def scale_and_cap_raw_forecast(rows, ema_fast: int, ema_slow: int):
-    """Take a raw forecast and calculate the scaled and capped forecast for that EMA pair."""
+def scale_and_cap_raw_forecast(rows, ema_fast: int, ema_slow: int) -> Tuple[list, list, list]:
+    """Take a raw forecast and calculate the scaled and capped forecast."""
     raw_forecast = np.array(
         [
             row[f"raw{ema_fast}_{ema_slow}"]
@@ -447,7 +466,7 @@ def scale_and_cap_raw_forecast(rows, ema_fast: int, ema_slow: int):
     return fc_avg, fc_scalar, fc_scaled, fc_scaled_capped
 
 
-def combined_forecast(symbol: str):
+def combined_forecast(symbol: str) -> None:
     """Take the raw forecasts and turn them into a combined forecast."""
     print(f"--- {symbol}: Updating Forecast ---")
     connection, cursor = connect()
@@ -566,7 +585,7 @@ def combined_forecast(symbol: str):
     print(f"Errors: {errors}")
 
 
-def instrument_risk(symbol: str):
+def instrument_risk(symbol: str) -> None:
     """Find the instrument risk / price volatility of a symbol. In percent. 0.5 = 50%."""
     print(f"--- {symbol}: Updating Instrument Risk ---")
     connection, cursor = connect()
@@ -629,32 +648,6 @@ def drop_tables():
         )
 
     print("--- TABLES DROPPED ---")
-
-
-def test(symbol: str):
-    """A test function."""
-    print(f"# TESTING {symbol} #")
-    sub = next(item for item in subsystems.db if item["symbol"] == symbol)
-    data_symbol = sub["data_symbol"]
-
-    empty, up_to_date, latestDate = check_table_status(symbol)
-
-    # if up_to_date == False:
-    if True:
-        print(f"{symbol} table NOT up to date. Updating.")
-
-        if sub["data_source"] == "Binance":
-            dates_closes = get_binance_data(empty, latestDate)
-        elif sub["data_source"] == "Yahoo":
-            dates_closes = get_yfinance_data(symbol, data_symbol, empty, latestDate)
-        elif sub["data_source"] == "Alpha Vantage":
-            dates_closes = get_AlphaVantage_data(symbol, data_symbol, empty, latestDate)
-
-        insert_closes_into_table(symbol, dates_closes)
-
-        calculate_emas(symbol)
-        combined_forecast(symbol)
-        instrument_risk(symbol)
 
 
 if __name__ == "__main__":

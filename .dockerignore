@@ -1,8 +1,0 @@
-env
-__pycache__
-
-db/__pycache__
-db/env
-
-src/responses
-src/__pycache__
