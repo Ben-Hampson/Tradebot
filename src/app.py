@@ -5,11 +5,11 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-loglevel = 10
-logging.basicConfig()
-logging.getLogger().setLevel(loglevel)
-logging.info("Reporting INFO-level messages")
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
 
+log = logging.getLogger(__name__)
 
 @app.get("/")
 async def root():

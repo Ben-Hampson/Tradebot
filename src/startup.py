@@ -1,6 +1,14 @@
+import logging
+
 import database as db
 import subsystems
 import telegram_bot as tg
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+
+log = logging.getLogger(__name__)
 
 
 def run(sub: dict):
@@ -12,7 +20,7 @@ def run(sub: dict):
     empty, up_to_date, latest_date = db.check_table_status(symbol)
 
     if up_to_date is False:
-        print(f"{symbol}: No data for yesterday. Attempting update.")
+        log.info(f"{symbol}: No data for yesterday. Attempting update.")
 
         if sub["data_source"] == "Binance":
             dates_closes = db.get_binance_data(empty, latest_date)
@@ -34,4 +42,4 @@ if __name__ == "__main__":
     for subsystem in subsystems.db:
         run(subsystem)
 
-    print("Finished startup.py")
+    log.info("Finished startup.py")

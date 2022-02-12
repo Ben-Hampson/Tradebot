@@ -1,3 +1,4 @@
+import logging
 import os
 import sqlite3
 from datetime import datetime, timedelta
@@ -12,6 +13,12 @@ import yahoo_fin.stock_info as si
 import subsystems
 import telegram_bot as tg
 from time_checker import time_check
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+
+log = logging.getLogger(__name__)
 
 
 def connect():
@@ -28,7 +35,7 @@ def connect():
 
 def create_database() -> None:
     """Creata tables in database if they don't already exist."""
-    print(f"--- 'CREATING' TABLES ---")
+    log.info(f"--- 'CREATING' TABLES ---")
 
     connection, cursor = connect()
 
@@ -66,16 +73,16 @@ def create_database() -> None:
 
     connection.commit()
 
-    print("--- Tables 'Created' ---")
+    log.info("--- Tables 'Created' ---")
 
 
 def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
     """Get status of database records.
-    
+
     If up to date, skip to ema_BTCUSDT.py
     Else, go to populate_BTCUSDT.py
     """
-    print(f"--- {symbol} Status ---")
+    log.info(f"--- {symbol} Status ---")
     connection, cursor = connect()
 
     # Get yesterday's date so we begin with yesterday's close (00:00)
@@ -83,7 +90,7 @@ def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
     oneDay = timedelta(days=1)
     yesterday = today - oneDay
     yesterday_date = yesterday.strftime("%Y-%m-%d")
-    print(f"toTimestamp: {yesterday_date}")
+    log.info(f"toTimestamp: {yesterday_date}")
 
     # Get latest records
     cursor.execute(
@@ -97,40 +104,40 @@ def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
     rows = cursor.fetchall()
 
     if len(rows) == 0:
-        print(f"{symbol} table is EMPTY.")
+        log.info(f"{symbol} table is EMPTY.")
         up_to_date = False
         empty = True
         latest_date = ""
     else:
         # No. of Records
-        print(f"{symbol} records: {len(rows)}")
+        log.info(f"{symbol} records: {len(rows)}")
 
         # Get the most recent record's date
         latest_date = rows[-1]["date"]
-        print(f"Latest Date in {symbol} table: {latest_date}")
+        log.info(f"Latest Date in {symbol} table: {latest_date}")
 
         # Determine if table is up to date, or not, or empty
         if latest_date == yesterday_date:
             up_to_date = True
             empty = False
-            print(f"{symbol} table up to date. No update needed.")
+            log.info(f"{symbol} table up to date. No update needed.")
         else:
             up_to_date = False
             empty = False
-            print(f"{symbol} table NOT up to date.")
+            log.info(f"{symbol} table NOT up to date.")
 
-    print(f"--- Finished checking {symbol} table ---")
+    log.info(f"--- Finished checking {symbol} table ---")
 
     return empty, up_to_date, latest_date
 
 
 def get_binance_data(empty: bool, latest_date: str) -> list:
     """Get Binance data for a pair.
-    
+
     Currently assumes symbol is BTCUSDT.
     Return a list of dates and daily closes.
     """
-    print(f"--- BTCUSDT: Populating Table ---")
+    log.info(f"--- BTCUSDT: Populating Table ---")
     connection, cursor = connect()
 
     # Get yesterday's date so we begin with yesterday's close (00:00)
@@ -139,7 +146,7 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
     yesterday = today - oneDay
     yesterday_date = yesterday.strftime("%Y-%m-%d")
     toTimestamp = int(datetime.timestamp(yesterday))
-    print(f"toTimestamp: {yesterday_date}")
+    log.info(f"toTimestamp: {yesterday_date}")
 
     # Do we have items in the table?
     cursor.execute(
@@ -154,7 +161,7 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
     date_array_rev = []
 
     if empty:
-        print("BTCUSDT table empty. Populating all available historic data.")
+        log.info("BTCUSDT table empty. Populating all available historic data.")
         end = False
         limit = 1000
 
@@ -175,7 +182,7 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
                 close = bar["close"]
                 if close == 0:
                     end = True
-                    print("Close = 0. Break.")
+                    log.info("Close = 0. Break.")
                     break
 
                 close_array_rev.append(close)
@@ -187,7 +194,7 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
             toTimestamp = datetime.timestamp(minusOneDay)
 
     else:  # If not empty and not up to date
-        print(f"Latest Date in BTCUSDT table: {latest_date}")
+        log.info(f"Latest Date in BTCUSDT table: {latest_date}")
 
         # Get latestDate in Unix Time, to use as fromTime in API request
         last = latest_date.split("-")
@@ -196,7 +203,7 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
         # Set API limit
         dateDiff = yesterday - latestDateDT
         limit = dateDiff.days
-        print(f"# of days to get close data for: {limit}")
+        log.info(f"# of days to get close data for: {limit}")
 
         # Request data from API
         data = requests.get(
@@ -215,7 +222,7 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
             timestamp = datetime.fromtimestamp(bar["time"])
             date = timestamp.strftime("%Y-%m-%d")
             close = float(bar["close"])
-            print(f"{date} - {close}")
+            log.info(f"{date} - {close}")
 
             close_array_rev.append(close)  # Returns: First = latest, last = oldest.
             date_array_rev.append(date)
@@ -229,9 +236,11 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
     return dates_closes
 
 
-def get_yfinance_data(symbol: str, data_symbol: str, empty: bool, latest_date: str) -> list:
+def get_yfinance_data(
+    symbol: str, data_symbol: str, empty: bool, latest_date: str
+) -> list:
     """Get Yahoo Finance data for a symbol.
-    
+
     Return a list of dates and daily closes.
     """
     data = si.get_data(data_symbol)
@@ -274,14 +283,14 @@ def insert_closes_into_table(symbol: str, dates_closes: list) -> None:
             )
             records += 1
         except Exception as e:
-            print(f"Exception: {e}")
+            log.info(f"Exception: {e}")
             errors += 1
 
     connection.commit()
 
-    print(f"--- {symbol}: table populated ---")
-    print(f"Records Added: {records}")
-    print(f"Errors: {errors}")
+    log.info(f"--- {symbol}: table populated ---")
+    log.info(f"Records Added: {records}")
+    log.info(f"Errors: {errors}")
 
 
 def ema_array(close_array: list, ema_length: int):
@@ -333,7 +342,7 @@ def raw_forecast(
 
 def left_pad(array: list, n: int, value):
     """Insert n elements to the start of an array.
-    
+
     Useful for making lists the same size and ensuring they go with the right
     dates in the table.
     """
@@ -345,7 +354,7 @@ def left_pad(array: list, n: int, value):
 
 def calculate_emas(symbol: str) -> None:
     """Take an array of closes from a table and work out all the EMAs and raw forecasts."""
-    print(f"--- {symbol}: Updating EMAs ---")
+    log.info(f"--- {symbol}: Updating EMAs ---")
     connection, cursor = connect()
 
     # Get dates and closes from the table.
@@ -404,7 +413,7 @@ def calculate_emas(symbol: str) -> None:
             date_data,
         )
     )
-    print(f"Input Length: {len(input)}")
+    log.info(f"Input Length: {len(input)}")
 
     # Update table
     records = 0
@@ -430,17 +439,19 @@ def calculate_emas(symbol: str) -> None:
             )
             records += 1
         except Exception as e:
-            print(f"Exception: {e}")
+            log.info(f"Exception: {e}")
             errors += 1
 
     connection.commit()
 
-    print(f"--- {symbol}: EMAs updated ---")
-    print(f"Records Updated: {records}")
-    print(f"Errors: {errors}")
+    log.info(f"--- {symbol}: EMAs updated ---")
+    log.info(f"Records Updated: {records}")
+    log.info(f"Errors: {errors}")
 
 
-def scale_and_cap_raw_forecast(rows, ema_fast: int, ema_slow: int) -> Tuple[list, list, list]:
+def scale_and_cap_raw_forecast(
+    rows, ema_fast: int, ema_slow: int
+) -> Tuple[list, list, list]:
     """Take a raw forecast and calculate the scaled and capped forecast."""
     raw_forecast = np.array(
         [
@@ -468,7 +479,7 @@ def scale_and_cap_raw_forecast(rows, ema_fast: int, ema_slow: int) -> Tuple[list
 
 def combined_forecast(symbol: str) -> None:
     """Take the raw forecasts and turn them into a combined forecast."""
-    print(f"--- {symbol}: Updating Forecast ---")
+    log.info(f"--- {symbol}: Updating Forecast ---")
     connection, cursor = connect()
 
     cursor.execute(
@@ -575,19 +586,19 @@ def combined_forecast(symbol: str) -> None:
             )
             records += 1
         except Exception as e:
-            print(f"Exception: {e}")
+            log.info(f"Exception: {e}")
             errors += 1
 
     connection.commit()
 
-    print(f"--- {symbol}: Forecast updated ---")
-    print(f"Records Updated: {records}")
-    print(f"Errors: {errors}")
+    log.info(f"--- {symbol}: Forecast updated ---")
+    log.info(f"Records Updated: {records}")
+    log.info(f"Errors: {errors}")
 
 
 def instrument_risk(symbol: str) -> None:
     """Find the instrument risk / price volatility of a symbol. In percent. 0.5 = 50%."""
-    print(f"--- {symbol}: Updating Instrument Risk ---")
+    log.info(f"--- {symbol}: Updating Instrument Risk ---")
     connection, cursor = connect()
 
     cursor.execute(
@@ -625,19 +636,19 @@ def instrument_risk(symbol: str) -> None:
             )
             records += 1
         except Exception as e:
-            print(f"Exception: {e}")
+            log.info(f"Exception: {e}")
             errors += 1
 
     connection.commit()
 
-    print(f"--- {symbol}: Instrument Risk updated ---")
-    print(f"Records Updated: {records}")
-    print(f"Errors: {errors}")
+    log.info(f"--- {symbol}: Instrument Risk updated ---")
+    log.info(f"Records Updated: {records}")
+    log.info(f"Errors: {errors}")
 
 
 def drop_tables():
     """Go through subsystems and drop each table listed there."""
-    print(f"--- DROPPING TABLES ---")
+    log.info(f"--- DROPPING TABLES ---")
     connection, cursor = connect()
 
     for sub in subsystems.db:
@@ -647,7 +658,7 @@ def drop_tables():
             """
         )
 
-    print("--- TABLES DROPPED ---")
+    log.info("--- TABLES DROPPED ---")
 
 
 if __name__ == "__main__":
@@ -670,7 +681,7 @@ if __name__ == "__main__":
         tg_message = f"*Database Update: {symbol}*\nEmpty: {empty}\nUp To Date: {up_to_date}\nLatest Record: {latestDate}"
 
         if up_to_date == False:
-            print(f"{symbol}: No data for yesterday. Attempting update.")
+            log.info(f"{symbol}: No data for yesterday. Attempting update.")
 
             if sub["data_source"] == "Binance":
                 dates_closes = get_binance_data(empty, latestDate)
@@ -690,4 +701,4 @@ if __name__ == "__main__":
 
         tg.outbound(tg_message)
 
-    print("Finished database.py")
+    log.info("Finished database.py")
