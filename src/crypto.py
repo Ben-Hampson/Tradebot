@@ -1,4 +1,4 @@
-"""Check strategy and, if correct, make an order for crypto subsystems."""
+"""Check strategy and make orders for crypto subsystems."""
 
 import logging
 import os

@@ -1,4 +1,4 @@
-"""API. Currently not being used."""
+"""API. Currently not in use."""
 
 import logging
 
