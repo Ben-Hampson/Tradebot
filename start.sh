@@ -1,11 +1,15 @@
 #!/bin/sh
 echo "Welcome to tradebot 2.2"
+
+printenv > /etc/environment
 service cron start
 service cron status
-poetry run python --version
+
+python --version
+cd /home/src
 echo "Updating database"
-poetry run python ./src/startup.py
+python ./startup.py
 echo "Starting Telegram bot"
-poetry run python ./src/telegram_bot.py
+python ./telegram_bot.py
 echo "Starting server"
-poetry run python ./src/app.py
+python ./app.py
