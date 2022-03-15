@@ -3,9 +3,7 @@
 
 Does it make money? Almost certainly not. Is it fun to build, and a good place for me to develop my skills? Yes, absolutely.
 
-```
-Note - March 2022: Tradebot was my first Python project so the code quality is... not great! I plan to give it a big refactor soon and make it a lot more robust.
-```
+`Note - March 2022: Tradebot was my first Python project so the code quality is... not great! I plan to give it a big refactor soon and make it a lot more robust.`
 
 ## Features
 * A portfolio of cryptocurrency instruments
