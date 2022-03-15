@@ -12,6 +12,7 @@ Does it make money? Almost certainly not. Is it fun to build, and a good place f
 * SQLite database to hold price data, indicator data, and a forecast for each instrument
 * Customisable strategy and position-sizing
 * Telegram bot to report updates and trade decisions
+* Continuous Deployment: Builds image, pushes to Docker, and updates deployment on the server.
 
 ## How It Works
 An overview of the business logic in `/src/`:
