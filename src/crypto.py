@@ -9,7 +9,7 @@ from forex_python.converter import CurrencyCodes, CurrencyRates
 
 import subsystems
 import telegram_bot as tg
-from calc import round_decimals_down
+from tools import round_decimals_down
 from database import connect
 from time_checker import time_check
 
