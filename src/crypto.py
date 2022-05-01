@@ -9,9 +9,9 @@ from forex_python.converter import CurrencyCodes, CurrencyRates
 
 import subsystems
 import telegram_bot as tg
-from tools import round_decimals_down
 from database import connect
 from time_checker import time_check
+from tools import round_decimals_down
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

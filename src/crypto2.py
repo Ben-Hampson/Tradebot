@@ -1,15 +1,16 @@
-from typing import Union
-import sys
 import logging
 import os
+import sys
 from textwrap import dedent
+from typing import Union
 
 from binance.client import Client as BinanceClient
 from forex_python.converter import CurrencyCodes, CurrencyRates
 
-from database import connect
-from tools import round_decimals_down
-import telegram_bot as tg
+from src.database import connect
+from src.tools import round_decimals_down
+
+# import telegram_bot as tg
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -287,6 +288,7 @@ def main():
     log.info("Trading Mode: %s", os.getenv("TRADING_MODE", "PAPER"))
 
     # TODO: Use database object / driver to get instruments from the Portfolio table
+    # TODO: Use sqlalchemy
     _, cursor = connect()
     cursor.execute(
         """

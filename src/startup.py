@@ -2,9 +2,7 @@
 
 import logging
 
-import database as db
-import subsystems
-import telegram_bot as tg
+from src import database as db, subsystems, telegram_bot as tg
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

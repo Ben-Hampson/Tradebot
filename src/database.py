@@ -12,9 +12,8 @@ import requests
 import tulipy as ti
 import yahoo_fin.stock_info as si
 
-import subsystems
-import telegram_bot as tg
-from time_checker import time_check
+from src import subsystems #, telegram_bot as tg
+from src.time_checker import time_check
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
