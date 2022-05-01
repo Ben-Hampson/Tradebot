@@ -47,8 +47,7 @@ class BinanceFutures(Exchange):
     @property
     def total_equity(self) -> float:
         """Get the total equity on the Binance Futures account."""
-        # return float(self.client.futures_account()["totalMarginBalance"])
-        return 100000.00  # TODO: Revert
+        return float(self.client.futures_account()["totalMarginBalance"])
 
     def get_current_price(self, symbol):
         """Get the value of one unit of this instrument on the exchange."""
@@ -267,6 +266,7 @@ class Instrument:
             log.info(f"Position change. New Position: {ideal_position}")
         else:
             self.decision = False
+            log.info(f"No change.")
 
         return (self.decision, self.side, self.quantity)
 
