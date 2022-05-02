@@ -6,10 +6,10 @@ service cron start
 service cron status
 
 python --version
-cd /home/src
+cd /home
 echo "Updating database"
-python ./startup.py
+python -m src.startup
 echo "Starting Telegram bot"
-python ./telegram_bot.py
+python -m src.telegram_bot
 echo "Starting server"
-python ./app.py
+python ./src/app.py

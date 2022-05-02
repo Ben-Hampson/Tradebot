@@ -12,9 +12,8 @@ import requests
 import tulipy as ti
 import yahoo_fin.stock_info as si
 
-import subsystems
-import telegram_bot as tg
-from time_checker import time_check
+from src import subsystems, telegram_bot as tg
+from src.time_checker import time_check
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -34,6 +33,36 @@ def connect():
 
     return connection, cursor
 
+def get_portfolio():
+    """Get portfolio of instruments from the 'portfolio' table."""
+    _, cursor = connect()
+    cursor.execute(
+        """
+        SELECT symbol, base_currency, exchange
+        FROM portfolio
+        """
+    )
+
+    rows = cursor.fetchall()
+
+    portfolio = []
+    
+    for row in rows:
+        portfolio.append(
+            {
+                "symbol": row["symbol"],
+                "broker": row["exchange"],
+                "data_source": "Binance",
+                "data_symbol": "",
+                "currency": row["base_currency"],
+                "order_time": [7, 0],
+                "forecast_time": [6, 0],  # CryptoCompare closes are at 00:00 GMT
+                "time_zone": "Europe/London",
+            }
+        )
+    
+    return portfolio
+
 
 def create_database() -> None:
     """Creata tables in database if they don't already exist."""
@@ -41,7 +70,7 @@ def create_database() -> None:
 
     connection, cursor = connect()
 
-    for sub in subsystems.db:
+    for sub in get_portfolio():
         cursor.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {sub['symbol']}(
@@ -667,7 +696,7 @@ if __name__ == "__main__":
     """Populate the database from scratch or update it, depending on its status."""
     create_database()  # If the tables are already there, it'll do nothing.
 
-    for sub in subsystems.db:
+    for sub in get_portfolio():
         symbol = sub["symbol"]
 
         # Check if forecast_time was in the last 15 minutes.

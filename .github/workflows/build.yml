@@ -1,11 +1,6 @@
 name: Publish DockerHub image
 
-on:
-  push:
-    branches:
-      - 'master'
-    tags:
-      - '*.*.*'
+on: push
 
 jobs:
   build-container:
