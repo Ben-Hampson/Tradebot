@@ -8,6 +8,7 @@ from binance.client import Client as BinanceClient
 from forex_python.converter import CurrencyCodes, CurrencyRates
 
 from src.database import connect
+from src.time_checker import time_check
 from src.tools import round_decimals_down
 from src import telegram_bot as tg
 
@@ -310,6 +311,13 @@ def main():
     )
 
     for instrument in portfolio:
+        # Exchange is always open, no need to check.
+        # Check if order_time was in the last 15 minutes.
+        if time_check(instrument.symbol, "order"):
+            pass
+        else:
+            continue
+
         # Calculate desired position
         print(f"{instrument.calc_desired_position()=}")
 
