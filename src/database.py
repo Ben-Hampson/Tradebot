@@ -70,7 +70,7 @@ def create_database() -> None:
 
     connection, cursor = connect()
 
-    for sub in get_portfolio():
+    for sub in subsystems.db:
         cursor.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {sub['symbol']}(
