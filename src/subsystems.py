@@ -11,7 +11,7 @@ db = [
     {
         "symbol": "BTCUSDT",
         "type": "crypto",
-        "broker": "Binance",
+        "exchange": "BinanceFutures",
         "data_source": "Binance",
         "data_symbol": "",
         "currency": "USDT",

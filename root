@@ -2,5 +2,6 @@
 # The cron jobs run every 15 minutes but effectively they only run once per day
 # because those scripts check whether any subsystems require the script to fully run yet.
 
-0,15,30,45 * * * * /venv/bin/python /home/src/database.py >> /home/logs/database.log 2>&1
-5,20,35,50 * * * * /venv/bin/python /home/src/crypto.py >> /home/logs/crypto.log 2>&1
+0,15,30,45 cd /home && /venv/bin/python -m src.database >> /home/logs/database.log 2>&1
+5,20,35,50 cd /home && /venv/bin/python -m src.crypto >> /home/logs/crypto.log 2>&1
+

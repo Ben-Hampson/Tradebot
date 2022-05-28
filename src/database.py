@@ -51,7 +51,7 @@ def get_portfolio():
         portfolio.append(
             {
                 "symbol": row["symbol"],
-                "broker": row["exchange"],
+                "exchange": row["exchange"],
                 "data_source": "Binance",
                 "data_symbol": "",
                 "currency": row["base_currency"],
@@ -63,9 +63,40 @@ def get_portfolio():
     
     return portfolio
 
+def create_portfolio_table() -> None:
+    """Create 'portfolio' table in database."""
+    log.info(f"--- 'CREATING' PORTFOLIO TABLE ---")
+
+    connection, cursor = connect()
+
+    cursor.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS 'portfolio'(
+            symbol NOT NULL UNIQUE PRIMARY KEY,
+            base_currency NOT NULL,
+            exchange NOT NULL
+        )
+        """)
+    
+    for sub in subsystems.db:
+        try:
+            cursor.execute(
+                f"""
+                INSERT INTO 'portfolio' (symbol, base_currency, exchange)
+                VALUES (?, ?, ?)
+                """,
+                (sub['symbol'], sub['currency'], sub['exchange']),
+            )
+        except Exception as exc:
+            log.exception(exc)
+        
+    connection.commit()
+
+    log.info("--- 'Portfolio' Table 'Created' ---")
+
 
 def create_database() -> None:
-    """Creata tables in database if they don't already exist."""
+    """Create tables in database if they don't already exist."""
     log.info(f"--- 'CREATING' TABLES ---")
 
     connection, cursor = connect()

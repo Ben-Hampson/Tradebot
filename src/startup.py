@@ -38,6 +38,7 @@ if __name__ == "__main__":
     tg.outbound("Server starting up.")
 
     db.create_database()  # If the tables are already there, it'll do nothing.
+    db.create_portfolio_table()
 
     for subsystem in subsystems.db:
         run(subsystem)
