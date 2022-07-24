@@ -38,7 +38,7 @@ def get_portfolio():
     _, cursor = connect()
     cursor.execute(
         """
-        SELECT symbol, base_currency, exchange
+        SELECT symbol, base_currency, quote_currency, exchange
         FROM portfolio
         """
     )
@@ -74,6 +74,7 @@ def create_portfolio_table() -> None:
         CREATE TABLE IF NOT EXISTS 'portfolio'(
             symbol NOT NULL UNIQUE PRIMARY KEY,
             base_currency NOT NULL,
+            quote_currency NOT NULL,
             exchange NOT NULL
         )
         """)
@@ -82,10 +83,10 @@ def create_portfolio_table() -> None:
         try:
             cursor.execute(
                 f"""
-                INSERT INTO 'portfolio' (symbol, base_currency, exchange)
-                VALUES (?, ?, ?)
+                INSERT INTO 'portfolio' (symbol, base_currency, quote_currency, exchange)
+                VALUES (?, ?, ?, ?)
                 """,
-                (sub['symbol'], sub['currency'], sub['exchange']),
+                (sub['symbol'], sub['base_currency'], sub['quote_currency'], sub['exchange']),
             )
         except Exception as exc:
             log.exception(exc)
@@ -100,6 +101,8 @@ def create_database() -> None:
     log.info(f"--- 'CREATING' TABLES ---")
 
     connection, cursor = connect()
+
+    create_portfolio_table()
 
     for sub in subsystems.db:
         cursor.execute(
@@ -213,7 +216,7 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
     # Do we have items in the table?
     cursor.execute(
         """SELECT *
-                      FROM BTCUSDT
+                      FROM BTCUSD
                       ORDER BY date ASC"""
     )
 
@@ -731,10 +734,11 @@ if __name__ == "__main__":
         symbol = sub["symbol"]
 
         # Check if forecast_time was in the last 15 minutes.
-        if time_check(symbol, "forecast"):
-            pass
-        else:
-            continue
+        # TODO: If empty, it should fill regardless of time_check().
+        # if time_check(symbol, "forecast"):
+        #     pass
+        # else:
+        #     continue
 
         data_symbol = sub["data_symbol"]
 

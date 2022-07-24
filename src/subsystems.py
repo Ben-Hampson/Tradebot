@@ -9,12 +9,13 @@
 
 db = [
     {
-        "symbol": "BTCUSDT",
+        "symbol": "BTCUSD",
         "type": "crypto",
-        "exchange": "BinanceFutures",
+        "exchange": "1INCH",
         "data_source": "Binance",
         "data_symbol": "",
-        "currency": "USDT",
+        "base_currency": "BTC",
+        "quote_currency": "USD",
         "broker-weight": 1,
         "overall-weight": 0.33,
         "block": "",
