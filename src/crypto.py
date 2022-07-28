@@ -126,14 +126,17 @@ class OneInch(Exchange):
         self.private_key = os.getenv("ETH_PRIVATE_KEY")
 
         self.oi = OneInchSwap(self.address, chain=chain)
+        self.chain = chain
 
         health = self.oi.health_check()
 
         if health != "OK":
             raise Exception("Unable to connect to 1Inch Exchange")
 
-        if chain == "optimism":
+        if self.chain == "optimism":
             provider = "https://mainnet.optimism.io"
+        if self.chain == "polygon":
+            provider = "https://polygon-rpc.com/"
         
         self.web3 = Web3(Web3.HTTPProvider(provider))
     
@@ -164,8 +167,11 @@ class OneInch(Exchange):
         # Get list of tokens
         # Check each one for my address's token balance
         # Convert amounts to USD and return
+
+        # v2: Get list of tokens from portfolio. Check only those for balances.
         tokens = self.oi.get_tokens()
-        tokens.pop("ETH")
+
+        tokens = {tokens[t]['symbol']: tokens[t] for t in tokens if t in ("ETH", "USDC")}
 
         total = 0
 
@@ -246,7 +252,7 @@ class OneInch(Exchange):
 
         # Create Swap
         if side == "BUY":
-            quote = self.oi.get_quote("WBTC", "USDC", quantity)
+            quote = self.oi.get_quote(base_currency, quote_currency, quantity)
             quantity = int(quote[0]["toTokenAmount"]) / 10 ** quote[0]["toToken"]["decimals"]
                 # Calculating quantity should be a function
             quantity *= 0.95
@@ -268,7 +274,6 @@ class OneInch(Exchange):
             return None
          
         if not swap:
-            # Retry
             log.error("Failed to get swap transaction.")
             return None
         
@@ -286,14 +291,21 @@ class OneInch(Exchange):
 
     def get_abi(self, addr: str) -> list:
         """Get ABI for a contract from Etherscan."""
+        if self.chain == "optimism":
+            base_url = "https://api-optimistic.etherscan.io/api"
+            api_key = os.getenv("ETHERSCAN_API_KEY")
+        if self.chain == "polygon":
+            base_url = "https://api.polygonscan.com/api"
+            api_key = os.getenv("POLYGONSCAN_API_KEY")
+
         resp = requests.get(
-            "https://api-optimistic.etherscan.io/api",
+            base_url,
             params = 
             {
                 "module": "contract",
                 "action": "getabi",
                 "address": addr,
-                "apikey": os.getenv("ETHERSCAN_API_KEY"),
+                "apikey": api_key,
             }
         )
         return resp.json()["result"]
@@ -320,7 +332,7 @@ def exchange_factory(exchange: str) -> Exchange:
     if exchange == "BinanceFutures":
         return BinanceFutures()
     if exchange == "1INCH":
-        return OneInch("optimism")
+        return OneInch("polygon")
 
     log.error(f"Exchange '{exchange}' currently not recognised.")
     return None
