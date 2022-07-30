@@ -744,10 +744,10 @@ if __name__ == "__main__":
 
         # Check if forecast_time was in the last 15 minutes.
         # TODO: If empty, it should fill regardless of time_check().
-        # if time_check(symbol, "forecast"):
-        #     pass
-        # else:
-        #     continue
+        if time_check(symbol, "forecast"):
+            pass
+        else:
+            continue
 
         data_symbol = sub["data_symbol"]
 

@@ -48,7 +48,6 @@ COPY --from=builder-base $VENV_PATH $VENV_PATH
 ENV TZ=Europe/London
 
 WORKDIR /home
-COPY poetry.lock pyproject.toml ./
 
 # Install any Python package requirements
 COPY src/ ./src
@@ -56,16 +55,11 @@ RUN mkdir -p /home/data \
     && mkdir -p /home/logs
 
 # Cron
-# ENV PATH="/root/.local/bin:$PATH"
-RUN apt-get -qq update -y && apt-get -qq install -y cron curl vim
-    # && curl -sSL https://install.python-poetry.org | python3 -
+RUN apt-get -qq update -y && apt-get -qq install -y cron
 COPY root /etc/cron.d/root
 RUN chmod 0644 /etc/cron.d/root
 RUN crontab /etc/cron.d/root
 
 COPY /start.sh .
-
-# COPY pyproject.toml poetry.lock ./
-# RUN poetry install --no-dev --no-interaction --no-ansi
 
 CMD ["/bin/bash", "/home/start.sh"]
