@@ -3,4 +3,4 @@
 # because those scripts check whether any subsystems require the script to fully run yet.
 
 0,15,30,45 * * * * cd /home && /venv/bin/python -m src.database >> /home/logs/database.log 2>&1
-5,20,35,50 * * * * cd /home && /venv/bin/python -m src.crypto >> /home/logs/crypto.log 2>&1
+5,20,35,50 * * * * cd /home && /venv/bin/python -m src.runner_crypto >> /home/logs/crypto.log 2>&1
