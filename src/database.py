@@ -12,7 +12,8 @@ import requests
 import tulipy as ti
 import yahoo_fin.stock_info as si
 
-from src import subsystems, telegram_bot as tg
+from src import subsystems
+from src import telegram_bot as tg
 from src.time_checker import time_check
 
 logging.basicConfig(
@@ -33,6 +34,7 @@ def connect():
 
     return connection, cursor
 
+
 def get_portfolio():
     """Get portfolio of instruments from the 'portfolio' table."""
     _, cursor = connect()
@@ -46,7 +48,7 @@ def get_portfolio():
     rows = cursor.fetchall()
 
     portfolio = []
-    
+
     for row in rows:
         portfolio.append(
             {
@@ -60,8 +62,9 @@ def get_portfolio():
                 "time_zone": "Europe/London",
             }
         )
-    
+
     return portfolio
+
 
 def create_portfolio_table() -> None:
     """Create 'portfolio' table in database."""
@@ -77,8 +80,9 @@ def create_portfolio_table() -> None:
             quote_currency NOT NULL,
             exchange NOT NULL
         )
-        """)
-    
+        """
+    )
+
     for sub in subsystems.db:
         try:
             cursor.execute(
@@ -86,11 +90,16 @@ def create_portfolio_table() -> None:
                 INSERT INTO 'portfolio' (symbol, base_currency, quote_currency, exchange)
                 VALUES (?, ?, ?, ?)
                 """,
-                (sub['symbol'], sub['base_currency'], sub['quote_currency'], sub['exchange']),
+                (
+                    sub["symbol"],
+                    sub["base_currency"],
+                    sub["quote_currency"],
+                    sub["exchange"],
+                ),
             )
         except Exception as exc:
             log.exception(exc)
-        
+
     connection.commit()
 
     log.info("--- 'Portfolio' Table 'Created' ---")

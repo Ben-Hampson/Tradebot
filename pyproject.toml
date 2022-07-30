@@ -17,13 +17,13 @@ forex-python = "^1.8"
 uvicorn = "^0.17.4"
 newtulipy = "^0.4.6"
 yahoo-fin = "^0.8.9"
-"1inch.py" = "^1.0.3"
+dydx-v3-python = "^1.6.1"
 
 [tool.poetry.dev-dependencies]
 black = "^21.12b0"
 isort = "^5.10.1"
 pylint = "^2.12.2"
-pytest = "^7.0.1"
+pytest = "^4.4.1"
 pytest-cov = "^3.0.0"
 
 [tool.isort]

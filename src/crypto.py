@@ -1,21 +1,13 @@
 import logging
-import os
-import sys
-from textwrap import dedent
-from typing import Union
 from functools import cached_property
+from typing import Union
+import os
 
-from binance.client import Client as BinanceClient
 from forex_python.converter import CurrencyCodes, CurrencyRates
-from web3 import Web3
-from oneinch_py import OneInchSwap
-import requests
-from time import sleep
 
 from src.database import connect
-from src.time_checker import time_check
+from src.dydx_exchange import dYdXExchange
 from src.tools import round_decimals_down
-from src import telegram_bot as tg
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -24,334 +16,28 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-class Exchange:
-    pass
-
-
-class BinanceFutures(Exchange):
-    """Binance Futures exchange (deprecated - shutting down for UK residents)."""
-
-    def __init__(self):
-        self.client = BinanceClient(
-            os.getenv("BI_API_KEY"), os.getenv("BI_API_SECRET"), tld="com"
-        )
-
-    @property
-    def all_positions(self):
-        """Get all positions on Binance Futures."""
-        return self.client.futures_position_information()
-
-    def get_position(self, base_currency: str, quote_currency: str) -> float:
-        """Get the current position for a specific instrument."""
-        if quote_currency == "USD":
-            quote_currency = "USDT"
-        
-        symbol = base_currency + quote_currency
-        
-        all_positions = self.all_positions
-        return float(
-            next(item for item in all_positions if item["symbol"] == symbol)[
-                "positionAmt"
-            ]
-        )
-
-    @property
-    def total_equity(self) -> float:
-        """Get the total equity on the Binance Futures account."""
-        return float(self.client.futures_account()["totalMarginBalance"])
-
-    def get_current_price(self, base_currency: str, quote_currency: str):
-        """Get the value of one unit of this instrument on the exchange."""
-        price_info = self.client.futures_mark_price()
-        
-        if quote_currency == "USD":
-            quote_currency = "USDT"
-        
-        symbol = base_currency + quote_currency
-        
-        return float(
-            next(item for item in price_info if item["symbol"] == symbol)["markPrice"]
-        )
-
-    def order(
-        self, base_currency: str, quote_currency: str, side: str, quantity: float, order_type: str = "MARKET"
-    ):
-        """Creates an order on the exchange."""
-        if side not in ("BUY", "SELL"):
-            return None
-
-        if not isinstance(quantity, float):
-            return None
-
-        if not isinstance(base_currency, str):
-            return None
-
-        if not isinstance(quote_currency, str):
-            return None
-
-        if not isinstance(order_type, str):
-            return None
-
-        if quote_currency == "USD":
-            quote_currency = "USDT"
-
-        symbol = base_currency + quote_currency
-
-        log.info(f"Order: {symbol} {side} {quantity}")
-
-        try:
-            if os.getenv("TRADING_MODE", "PAPER") == "LIVE":
-                log.info("Trading Mode: Live")
-                binance_order = self.client.futures_create_order(
-                    symbol=symbol, side=side, type=order_type, quantity=quantity
-                )
-            else:
-                log.info("Trading Mode: Test")
-                binance_order = self.client.create_test_order(
-                    symbol=symbol, side=side, type=order_type, quantity=quantity
-                )
-            log.info(f"Binance Order Response: {binance_order}")
-        except Exception:
-            log.exception(f"Binance Order Response: Exception occurred.")
-            return False
-
-        return binance_order
-
-
-class OneInch(Exchange):
-    """1Inch exchange."""
-    
-    def __init__(self, chain: str):
-        self.address = os.getenv("ETH_ADDRESS")
-        self.private_key = os.getenv("ETH_PRIVATE_KEY")
-
-        self.oi = OneInchSwap(self.address, chain=chain)
-        self.chain = chain
-
-        health = self.oi.health_check()
-
-        if health != "OK":
-            raise Exception("Unable to connect to 1Inch Exchange")
-
-        if self.chain == "optimism":
-            provider = "https://mainnet.optimism.io"
-        if self.chain == "polygon":
-            provider = "https://polygon-rpc.com/"
-        
-        self.web3 = Web3(Web3.HTTPProvider(provider))
-    
-    @property
-    def all_positions(self):
-        pass
-    
-    def get_position(self, base_currency: str, quote_currency: str) -> float:
-        """Get the current position (quantity) for a specific instrument."""
-        # How to get short position? Should short be a negative position? I think so...
-        tokens = self.oi.get_tokens()
-
-        # Use wETH, not ETH. Address is wrong from 1INCH. 0xeeee...
-        if base_currency == 'ETH':
-            base_currency = 'WETH'
-        if base_currency == 'BTC':
-            base_currency = 'WBTC'
-
-        # Get number of each token
-        abi = self.get_abi(tokens[base_currency]["address"])
-        contract = self.web3.eth.contract(self.web3.toChecksumAddress(tokens[base_currency]["address"]), abi=abi)
-        token_balance = contract.functions.balanceOf(self.address).call() / 10**tokens[base_currency]["decimals"]
-
-        return token_balance
-
-    @cached_property
-    def total_equity(self) -> float:
-        # Get list of tokens
-        # Check each one for my address's token balance
-        # Convert amounts to USD and return
-
-        # v2: Get list of tokens from portfolio. Check only those for balances.
-        tokens = self.oi.get_tokens()
-
-        tokens = {tokens[t]['symbol']: tokens[t] for t in tokens if t in ("ETH", "USDC")}
-
-        total = 0
-
-        # Get number of each token
-        # Use wETH, not ETH. Address is wrong from 1INCH. 0xeeee...
-        for token in tokens:
-            abi = self.get_abi(tokens[token]["address"])
-            contract = self.web3.eth.contract(self.web3.toChecksumAddress(tokens[token]["address"]), abi=abi)
-            token_balance = contract.functions.balanceOf(self.address).call() / 10**tokens[token]["decimals"]
-            
-            if token == "USDC":
-                price = 1.0
-            else:
-                price = self.get_current_price(token, "USDC")
-                if not price:
-                    continue
-            # print(f"{token=} - {token_balance=} - ${price=}")
-            total += token_balance * price
-
-        # Ether Value
-        # This is different to WETH, but we'll use the WETH price.
-        ether_balance = self.web3.eth.get_balance(self.address) / 10**18
-        ether_price = self.get_current_price("WETH", "USDC")
-
-        total += ether_balance * ether_price
-        # print(f"${total=}")
-
-        return total
-
-    def get_current_price(self, from_token: str, to_token: str) -> float:
-        if from_token == 'BTC':
-            from_token = 'WBTC'
-        if from_token == 'ETH':
-            from_token = 'WETH'
-        
-        if to_token == "USD":
-            to_token = "USDC"
-
-        try:
-            quote = self.oi.get_quote(from_token_symbol=from_token, to_token_symbol=to_token, amount=1)
-        except Exception:
-            log.error(f"Can't get quote. Symbol: {from_token}{to_token}.")
-            return None
-        
-        # quote_value = round(float(quote[1]), 2)  # Weird. Flips around base and quote currencies.
-        usdc_tokens = int(quote[0]["toTokenAmount"])
-        usdc_decimals = int(quote[0]["toToken"]["decimals"])
-        quote_value = usdc_tokens / (10 ** usdc_decimals)
-        return quote_value
-
-    def order(
-        self, base_currency: str, quote_currency: str, side: str, quantity: float, order_type: str = "MARKET"
-    ):
-        """Creates an order on the exchange."""
-        # TODO: JUST TESTING! ADD SHORTS
-        side = "BUY"
-
-        if base_currency == "BTC":
-            base_currency = "WBTC"
-        if quote_currency == "USD":
-            quote_currency = "USDC"
-
-        # Check approval and approve if necessary
-        for token in (base_currency, quote_currency):
-            allowance = int(self.oi.get_allowance(token)["allowance"])
-            if token != 'USDC':
-                price = float(self.oi.get_quote(token, "USDC", 1)[1])
-            else:
-                price = 1
-
-            if allowance * price < 10000:
-                log.info(f"{token}: Allowance too low. {allowance} x {price} = ${allowance * price}.")
-                log.info("Requesting greater allowance.")
-                approve = self.oi.get_approve(token, 10000000)
-                self.send_swap_transaction(approve)
-            else:
-                log.info(f"{token}: Allowance is sufficient.")
-
-        # Create Swap
-        if side == "BUY":
-            quote = self.oi.get_quote(base_currency, quote_currency, quantity)
-            quantity = int(quote[0]["toTokenAmount"]) / 10 ** quote[0]["toToken"]["decimals"]
-                # Calculating quantity should be a function
-            quantity *= 0.95
-                # Bit of lee-way
-            quantity = round(quantity, 2)
-                # Prevents error caused when amount in swap has a decimal place
-
-            swap = None
-            count = 0
-            while not swap and count <10:
-                swap = self.oi.get_swap(from_token_symbol=quote_currency, to_token_symbol=base_currency, amount=quantity, slippage=1)
-                sleep(1)
-                count += 1
-        elif side == "SELL":
-            log.info("NOTE: Unable to short.")
-            swap = self.oi.get_swap(from_token_symbol=base_currency, to_token_symbol=quote_currency, amount=quantity, slippage=0.5)
-        else:
-            log.error("Side must be 'BUY' or 'SELL'.")
-            return None
-         
-        if not swap:
-            log.error("Failed to get swap transaction.")
-            return None
-        
-        # Send Transaction
-        swap_tx = swap["tx"]
-
-        receipt = self.send_swap_transaction(swap_tx)
-
-        if receipt == 1:
-            log.info(f"Success: {side.title()} {quantity} {base_currency}{quote_currency}")
-        else:
-            log.error(f"Fail: {side.title()} {quantity} {base_currency}{quote_currency}")
-
-        return receipt
-
-    def get_abi(self, addr: str) -> list:
-        """Get ABI for a contract from Etherscan."""
-        if self.chain == "optimism":
-            base_url = "https://api-optimistic.etherscan.io/api"
-            api_key = os.getenv("ETHERSCAN_API_KEY")
-        if self.chain == "polygon":
-            base_url = "https://api.polygonscan.com/api"
-            api_key = os.getenv("POLYGONSCAN_API_KEY")
-
-        resp = requests.get(
-            base_url,
-            params = 
-            {
-                "module": "contract",
-                "action": "getabi",
-                "address": addr,
-                "apikey": api_key,
-            }
-        )
-        return resp.json()["result"]
-
-    def send_swap_transaction(self, tx: dict) -> dict:
-        """Sign and send swap transaction."""
-        tx["to"] = self.web3.toChecksumAddress(tx["to"])
-        tx["nonce"] = self.web3.eth.getTransactionCount(self.address)
-        tx["gasPrice"] = 1000000  # TODO: Understand this
-        tx["gas"] = 1000000  # TODO: Understand this
-        tx.pop("value")
-
-        signed_tx = self.web3.eth.account.sign_transaction(tx, self.private_key)
-        tx_hash = self.web3.eth.sendRawTransaction(signed_tx.rawTransaction)
-
-        hex_hash = self.web3.toHex(tx_hash)
-        sleep(1)
-        log.info(f"Hash: {hex_hash}")
-        
-        return self.web3.eth.getTransactionReceipt(hex_hash)["status"]
-
-def exchange_factory(exchange: str) -> Exchange:
+def exchange_factory(exchange: str):
     """Factory for Exchange classes."""
-    if exchange == "BinanceFutures":
-        return BinanceFutures()
-    if exchange == "1INCH":
-        return OneInch("polygon")
+    if exchange.lower() == "crypto":
+        return dYdXExchange()
+    if exchange.lower() == "stock":
+        log.error("Stock exchange not implemented yet.")
+        return None
 
     log.error(f"Exchange '{exchange}' currently not recognised.")
     return None
-
-
-# ---------------
 
 
 class Instrument:
     def __init__(
         self,
         symbol: str,
-        exchange: Exchange,
+        exchange,
         base_currency: str,
         quote_currency: str,
         sub_weight: Union[float, int],
     ):
         """Insert exchange upon creation."""
-        # Is requiring an Exchange object dependency injection?
         self.symbol = symbol
         self.exchange = exchange_factory(exchange)
         self.base_currency = base_currency
@@ -511,126 +197,12 @@ class Instrument:
         if not self.decision:
             print("Decision was to NOT trade. Will not order.")
 
-        # trading_mode = os.getenv("TRADING_MODE")
-        # if trading_mode == "LIVE":
-        log.info("Trading Mode: Live")
-        self.exchange.order(self.base_currency, self.quote_currency, self.side, self.quantity)
-        
-        # log.info("Trading Mode: Paper")
-        # log.info("Paper Trade: Ordered.")
-        # return None
-            
-
-
-
-def main():
-    """Get portfolio. Create Instruments for each one."""
-    log.info("Trading Mode: %s", os.getenv("TRADING_MODE", "PAPER"))
-
-    # TODO: Use database object / driver to get instruments from the Portfolio table
-    # TODO: Use sqlalchemy
-    _, cursor = connect()
-    cursor.execute(
-        """
-        SELECT symbol, base_currency, quote_currency, exchange
-        FROM portfolio
-        """
-    )
-
-    rows = cursor.fetchall()
-
-    if not rows:
-        log.error("No Instruments in 'portfolio' in database. Stopping.")
-        sys.exit()
-
-    sub_weight = 1 / len(rows)
-
-    portfolio = (
-        Instrument(row["symbol"], row["exchange"], row["base_currency"], row["quote_currency"], sub_weight)
-        for row in rows
-    )
-
-    for instrument in portfolio:
-        # Exchange is always open, no need to check.
-        # Check if order_time was in the last 15 minutes.
-        # if time_check(instrument.symbol, "order"):
-        #     pass
-        # else:
-        #     continue
-
-        # Calculate desired position
-
-        # TESTBED
-
-        instrument.calc_desired_position()
-
-        # Send the order
-        if instrument.decision:
-            instrument.order()
-
-        # Send the message
-        if instrument.decision:
-            message = f"""\
-            *{instrument.symbol}*
-            
-            {instrument.side} {instrument.quantity}"""
+        trading_mode = os.getenv("TRADING_MODE")
+        if trading_mode == "LIVE":
+            log.info("Trading Mode: Live")
+            self.exchange.order(
+                self.base_currency, self.quote_currency, self.side, self.quantity
+            )
         else:
-            message = f"""\
-            *{instrument.symbol}*
-            
-            No change."""
-
-        tg.outbound(dedent(message))
-
-        log.info(f"{instrument.symbol}: Complete")
-
-    log.info("Finished.")
-
-    #     # == BEFORE ==
-    #     # Establish what the instrument is
-    #     print(f"{instrument.symbol=}")
-    #     print(f"{instrument.base_currency=}")
-    #     print(f"{instrument.fx_rate=}")  # TODO: Are we using the fx_rate properly?
-    #     print(f"{instrument.exchange=}")
-
-    #     # Status
-    #     print(f"{instrument.exchange.total_equity=}")
-    #     print(f"{instrument.sub_equity=}")
-    #     print(f"{instrument.position=}")
-    #     print(f"{instrument.price=}")
-
-    #     # Get forecast and instrument risk
-    #     print(f"{instrument.forecast=}")
-    #     print(f"{instrument.risk=}")
-
-    #     # Calculate desired position
-    #     print(f"{instrument.calc_desired_position()=}")
-
-    #     # Send the order
-    #     if instrument.decision:
-    #         print(f"{instrument.order()=}")
-
-    #     # Verify the new position
-    #     print(f"{instrument.position=}")
-
-    #     # Send the message
-    #     if instrument.decision:
-    #         message = f"""\
-    #         *{instrument.symbol}*
-            
-    #         {instrument.side} {instrument.quantity}"""
-    #     else:
-    #         message = f"""\
-    #         *{instrument.symbol}*
-            
-    #         No change."""
-
-    #     tg.outbound(dedent(message))
-
-    #     log.info(f"{instrument.symbol}: Complete")
-
-    # log.info("Finished.")
-
-
-if __name__ == "__main__":
-    main()
+            log.info("Trading Mode: Paper")
+            log.info("Not making order.")
