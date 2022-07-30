@@ -12,7 +12,8 @@ import requests
 import tulipy as ti
 import yahoo_fin.stock_info as si
 
-from src import subsystems, telegram_bot as tg
+from src import subsystems
+from src import telegram_bot as tg
 from src.time_checker import time_check
 
 logging.basicConfig(
@@ -33,12 +34,13 @@ def connect():
 
     return connection, cursor
 
+
 def get_portfolio():
     """Get portfolio of instruments from the 'portfolio' table."""
     _, cursor = connect()
     cursor.execute(
         """
-        SELECT symbol, base_currency, exchange
+        SELECT symbol, base_currency, quote_currency, exchange
         FROM portfolio
         """
     )
@@ -46,7 +48,7 @@ def get_portfolio():
     rows = cursor.fetchall()
 
     portfolio = []
-    
+
     for row in rows:
         portfolio.append(
             {
@@ -60,8 +62,9 @@ def get_portfolio():
                 "time_zone": "Europe/London",
             }
         )
-    
+
     return portfolio
+
 
 def create_portfolio_table() -> None:
     """Create 'portfolio' table in database."""
@@ -74,22 +77,29 @@ def create_portfolio_table() -> None:
         CREATE TABLE IF NOT EXISTS 'portfolio'(
             symbol NOT NULL UNIQUE PRIMARY KEY,
             base_currency NOT NULL,
+            quote_currency NOT NULL,
             exchange NOT NULL
         )
-        """)
-    
+        """
+    )
+
     for sub in subsystems.db:
         try:
             cursor.execute(
                 f"""
-                INSERT INTO 'portfolio' (symbol, base_currency, exchange)
-                VALUES (?, ?, ?)
+                INSERT INTO 'portfolio' (symbol, base_currency, quote_currency, exchange)
+                VALUES (?, ?, ?, ?)
                 """,
-                (sub['symbol'], sub['currency'], sub['exchange']),
+                (
+                    sub["symbol"],
+                    sub["base_currency"],
+                    sub["quote_currency"],
+                    sub["exchange"],
+                ),
             )
         except Exception as exc:
             log.exception(exc)
-        
+
     connection.commit()
 
     log.info("--- 'Portfolio' Table 'Created' ---")
@@ -100,6 +110,8 @@ def create_database() -> None:
     log.info(f"--- 'CREATING' TABLES ---")
 
     connection, cursor = connect()
+
+    create_portfolio_table()
 
     for sub in subsystems.db:
         cursor.execute(
@@ -213,7 +225,7 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
     # Do we have items in the table?
     cursor.execute(
         """SELECT *
-                      FROM BTCUSDT
+                      FROM BTCUSD
                       ORDER BY date ASC"""
     )
 
@@ -731,6 +743,7 @@ if __name__ == "__main__":
         symbol = sub["symbol"]
 
         # Check if forecast_time was in the last 15 minutes.
+        # TODO: If empty, it should fill regardless of time_check().
         if time_check(symbol, "forecast"):
             pass
         else:

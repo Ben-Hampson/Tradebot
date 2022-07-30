@@ -49,4 +49,4 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
 
       - name: Pull image and restart tradebot
-        run: ssh staging 'cd /home/${{ secrets.SSH_USER }}/tradebot && docker-compose pull && docker-compose up -d'
+        run: ssh staging 'cd /home/${{ secrets.SSH_USER }}/tradebot && docker compose pull && docker compose up -d'

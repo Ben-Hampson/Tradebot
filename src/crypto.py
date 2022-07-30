@@ -1,16 +1,13 @@
 import logging
-import os
-import sys
-from textwrap import dedent
+from functools import cached_property
 from typing import Union
+import os
 
-from binance.client import Client as BinanceClient
 from forex_python.converter import CurrencyCodes, CurrencyRates
 
 from src.database import connect
-from src.time_checker import time_check
+from src.dydx_exchange import dYdXExchange
 from src.tools import round_decimals_down
-from src import telegram_bot as tg
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -19,115 +16,37 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-class Exchange:
-    pass
-
-
-class BinanceFutures(Exchange):
-    """Binance Futures exchange (deprecated - shutting down for UK residents)."""
-
-    def __init__(self):
-        self.client = BinanceClient(
-            os.getenv("BI_API_KEY"), os.getenv("BI_API_SECRET"), tld="com"
-        )
-
-    @property
-    def all_positions(self):
-        """Get all positions on Binance Futures."""
-        return self.client.futures_position_information()
-
-    def get_position(self, symbol: str):
-        """Get the current position for a specific instrument."""
-        all_positions = self.all_positions
-        return float(
-            next(item for item in all_positions if item["symbol"] == symbol)[
-                "positionAmt"
-            ]
-        )
-
-    @property
-    def total_equity(self) -> float:
-        """Get the total equity on the Binance Futures account."""
-        return float(self.client.futures_account()["totalMarginBalance"])
-
-    def get_current_price(self, symbol):
-        """Get the value of one unit of this instrument on the exchange."""
-        price_info = self.client.futures_mark_price()
-        return float(
-            next(item for item in price_info if item["symbol"] == symbol)["markPrice"]
-        )
-
-    def order(
-        self, symbol: str, side: str, quantity: float, order_type: str = "MARKET"
-    ):
-        """Creates an order on the exchange."""
-        if side not in ("BUY", "SELL"):
-            return None
-
-        if not isinstance(quantity, float):
-            return None
-
-        if not isinstance(symbol, str):
-            return None
-
-        if not isinstance(order_type, str):
-            return None
-
-        log.info(f"Order: {symbol} {side} {quantity}")
-
-        try:
-            if os.getenv("TRADING_MODE", "PAPER") == "LIVE":
-                log.info("Trading Mode: Live")
-                binance_order = self.client.futures_create_order(
-                    symbol=symbol, side=side, type=order_type, quantity=quantity
-                )
-            else:
-                log.info("Trading Mode: Test")
-                binance_order = self.client.create_test_order(
-                    symbol=symbol, side=side, type=order_type, quantity=quantity
-                )
-            log.info(f"Binance Order Response: {binance_order}")
-        except Exception:
-            log.exception(f"Binance Order Response: Exception occurred.")
-            return False
-
-        return binance_order
-
-
-class Kraken(Exchange):
-    pass
-
-
-def exchange_factory(exchange: str) -> Exchange:
+def exchange_factory(exchange: str):
     """Factory for Exchange classes."""
-    if exchange == "BinanceFutures":
-        return BinanceFutures
+    if exchange.lower() == "crypto":
+        return dYdXExchange()
+    if exchange.lower() == "stock":
+        log.error("Stock exchange not implemented yet.")
+        return None
 
     log.error(f"Exchange '{exchange}' currently not recognised.")
     return None
-
-
-# ---------------
 
 
 class Instrument:
     def __init__(
         self,
         symbol: str,
-        exchange: Exchange,
+        exchange,
         base_currency: str,
+        quote_currency: str,
         sub_weight: Union[float, int],
     ):
         """Insert exchange upon creation."""
-        # Is requiring an Exchange object dependency injection?
         self.symbol = symbol
-        self.exchange = exchange_factory(exchange)()
+        self.exchange = exchange_factory(exchange)
         self.base_currency = base_currency
+        self.quote_currency = quote_currency
         self.sub_weight = sub_weight
 
-    @property
+    @cached_property
     def sub_equity(self):
-        """Max amount alloted to trading this instrument.
+        """Max amount allotted to trading this instrument.
 
         Subsystem Weighting * Total Equity
         """
@@ -136,42 +55,37 @@ class Instrument:
 
         return self.exchange.total_equity * self.sub_weight
 
-    @property
+    @cached_property
     def currency_sign(self):
         """e.g. $ for USD or £ for GBP"""
-        if self.base_currency in ("USD", "USDT"):
-            return "$"
-        else:
-            cc = CurrencyCodes()
-            return cc.get_symbol(self.base_currency)
+        cc = CurrencyCodes()
+        return cc.get_symbol(self.quote_currency)
 
-    @property
+    @cached_property
     def fx_rate(self):
         """FX rate of base_currency against the GBP"""
         cr = CurrencyRates()
 
-        if self.base_currency == "GBP":
+        if self.quote_currency == "GBP":
             log.info("Currency is GBP. FX Rate: 1")
             return 1
-        elif self.base_currency in ("USDT", "USDC", "BUSD"):
-            fx = cr.get_rate("GBP", "USD")
         else:
-            fx = cr.get_rate("GBP", self.base_currency)
+            fx = cr.get_rate("GBP", self.quote_currency)
 
-        log.info(f"GBP{self.base_currency} FX Rate: {fx}")
+        log.info(f"GBP{self.quote_currency} FX Rate: {fx}")
         return fx
 
-    @property
+    @cached_property
     def position(self):
-        """Get the current position for this instrument on the exchange."""
-        return self.exchange.get_position(self.symbol)
+        """Get the current position (quantity of the instrument) for this instrument on the exchange."""
+        return self.exchange.get_position(self.base_currency, self.quote_currency)
 
-    @property
+    @cached_property
     def price(self):
         """Get the current price for this instrument from the exchange."""
-        return self.exchange.get_current_price(self.symbol)
+        return self.exchange.get_current_price(self.base_currency, self.quote_currency)
 
-    @property
+    @cached_property
     def latest_record(self) -> dict:
         """Get the latest record for the instrument from the database."""
         _, cursor = connect()
@@ -193,12 +107,12 @@ class Instrument:
             "risk": rows[0]["instrument_risk"],
         }
 
-    @property
+    @cached_property
     def forecast(self) -> float:
         """Get the forecast for this instrument from the database."""
         return self.latest_record["forecast"]
 
-    @property
+    @cached_property
     def risk(self) -> float:
         """Get the risk for this instrument from the database."""
         return self.latest_record["risk"]
@@ -216,9 +130,12 @@ class Instrument:
         # If Notional Exposure > Subsystem Equity, cap it.
         # This is only relevant because we're not using leverage.
         # Ignore whether it's +ve/-ve forecast until later.
+        log.info(f"Sub Equity: {self.sub_equity}")
+        log.info(f"Risk Target: {risk_target}")
         notional_exposure = ((self.sub_equity * risk_target) / self.risk) * (
             self.forecast / 10
         )
+        log.info(f"Forecast: {self.forecast}")
         log.info(f"Notional Exposure: {notional_exposure:.2f}")
 
         if self.sub_equity < abs(notional_exposure):
@@ -251,6 +168,7 @@ class Instrument:
             pass
 
         # Calculate Quantity and Side
+        log.info(f"Current position: {self.position}")
         position_change = ideal_position - self.position
         self.quantity = abs(position_change)
         if position_change > 0:
@@ -279,115 +197,12 @@ class Instrument:
         if not self.decision:
             print("Decision was to NOT trade. Will not order.")
 
-        print("ORDERING")
-        self.exchange.order(self.symbol, self.side, self.quantity)
-
-
-def main():
-    """Get portfolio. Create Instruments for each one."""
-    log.info("Trading Mode: %s", os.getenv("TRADING_MODE", "PAPER"))
-
-    # TODO: Use database object / driver to get instruments from the Portfolio table
-    # TODO: Use sqlalchemy
-    _, cursor = connect()
-    cursor.execute(
-        """
-        SELECT symbol, base_currency, exchange
-        FROM portfolio
-        """
-    )
-
-    rows = cursor.fetchall()
-
-    if not rows:
-        log.error("No Instruments in 'portfolio' in database. Stopping.")
-        sys.exit()
-
-    sub_weight = 1 / len(rows)
-
-    portfolio = (
-        Instrument(row["symbol"], row["exchange"], row["base_currency"], sub_weight)
-        for row in rows
-    )
-
-    for instrument in portfolio:
-        # Exchange is always open, no need to check.
-        # Check if order_time was in the last 15 minutes.
-        if time_check(instrument.symbol, "order"):
-            pass
+        trading_mode = os.getenv("TRADING_MODE")
+        if trading_mode == "LIVE":
+            log.info("Trading Mode: Live")
+            self.exchange.order(
+                self.base_currency, self.quote_currency, self.side, self.quantity
+            )
         else:
-            continue
-
-        # Calculate desired position
-        print(f"{instrument.calc_desired_position()=}")
-
-        # Send the order
-        if instrument.decision:
-            print(f"{instrument.order()=}")
-
-        # Send the message
-        if instrument.decision:
-            message = f"""\
-            *{instrument.symbol}*
-            
-            {instrument.side} {instrument.quantity}"""
-        else:
-            message = f"""\
-            *{instrument.symbol}*
-            
-            No change."""
-
-        tg.outbound(dedent(message))
-
-        log.info(f"{instrument.symbol}: Complete")
-
-    log.info("Finished.")
-
-    #     # == BEFORE ==
-    #     # Establish what the instrument is
-    #     print(f"{instrument.symbol=}")
-    #     print(f"{instrument.base_currency=}")
-    #     print(f"{instrument.fx_rate=}")  # TODO: Are we using the fx_rate properly?
-    #     print(f"{instrument.exchange=}")
-
-    #     # Status
-    #     print(f"{instrument.exchange.total_equity=}")
-    #     print(f"{instrument.sub_equity=}")
-    #     print(f"{instrument.position=}")
-    #     print(f"{instrument.price=}")
-
-    #     # Get forecast and instrument risk
-    #     print(f"{instrument.forecast=}")
-    #     print(f"{instrument.risk=}")
-
-    #     # Calculate desired position
-    #     print(f"{instrument.calc_desired_position()=}")
-
-    #     # Send the order
-    #     if instrument.decision:
-    #         print(f"{instrument.order()=}")
-
-    #     # Verify the new position
-    #     print(f"{instrument.position=}")
-
-    #     # Send the message
-    #     if instrument.decision:
-    #         message = f"""\
-    #         *{instrument.symbol}*
-            
-    #         {instrument.side} {instrument.quantity}"""
-    #     else:
-    #         message = f"""\
-    #         *{instrument.symbol}*
-            
-    #         No change."""
-
-    #     tg.outbound(dedent(message))
-
-    #     log.info(f"{instrument.symbol}: Complete")
-
-    # log.info("Finished.")
-
-
-if __name__ == "__main__":
-    main()
+            log.info("Trading Mode: Paper")
+            log.info("Not making order.")
