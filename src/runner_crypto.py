@@ -50,12 +50,12 @@ def main():
 
     for instrument in portfolio:
         # Exchange is always open, no need to check.
-        # TODO: Argparse flag to disable time check.
+        # TODO: argparse flag to disable time check.
         # Check if order_time was in the last 15 minutes.
-        # if time_check(instrument.symbol, "order"):
-        #     pass
-        # else:
-        #     continue
+        if time_check(instrument.symbol, "order"):
+            pass
+        else:
+            continue
 
         # Calculate desired position
         instrument.calc_desired_position()
