@@ -20,7 +20,7 @@ ENV PATH="$VENV_PATH/bin:$PATH"
 # `builder-base` stage is used to build deps + create our virtual environment
 # build-essential for building python deps
 FROM python-base as builder-base
-RUN apt-get update \
+RUN apt-get update --fix-missing \
     && apt-get install -y build-essential
 
 RUN pip install --no-cache-dir poetry=="1.1.12"
