@@ -15,6 +15,7 @@ import yahoo_fin.stock_info as si
 from src import subsystems
 from src import telegram_bot as tg
 from src.time_checker import time_check
+from src.database_2 import get_portfolio
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -35,33 +36,33 @@ def connect():
     return connection, cursor
 
 
-def get_portfolio():
-    """Get portfolio of instruments from the 'portfolio' table."""
-    _, cursor = connect()
-    cursor.execute(
-        """
-        SELECT symbol, base_currency, quote_currency, exchange
-        FROM portfolio
-        """
-    )
+# def get_portfolio():
+#     """Get portfolio of instruments from the 'portfolio' table."""
+#     _, cursor = connect()
+#     cursor.execute(
+#         """
+#         SELECT symbol, base_currency, quote_currency, exchange
+#         FROM portfolio
+#         """
+#     )
 
-    rows = cursor.fetchall()
+#     # rows = cursor.fetchall()
 
-    portfolio = []
+#     # portfolio = []
 
-    for row in rows:
-        portfolio.append(
-            {
-                "symbol": row["symbol"],
-                "exchange": row["exchange"],
-                "data_source": "Binance",
-                "data_symbol": "",
-                "currency": row["base_currency"],
-                "order_time": [7, 0],
-                "forecast_time": [6, 0],  # CryptoCompare closes are at 00:00 GMT
-                "time_zone": "Europe/London",
-            }
-        )
+#     # for row in rows:
+#     #     portfolio.append(
+#     #         {
+#     #             "symbol": row["symbol"],
+#     #             "exchange": row["exchange"],
+#     #             "data_source": "Binance",
+#     #             "data_symbol": "",
+#     #             "currency": row["base_currency"],
+#     #             "order_time": [7, 0],
+#     #             "forecast_time": [6, 0],  # CryptoCompare closes are at 00:00 GMT
+#     #             "time_zone": "Europe/London",
+#     #         }
+#     #     )
 
     return portfolio
 
@@ -737,19 +738,17 @@ def drop_tables():
 
 if __name__ == "__main__":
     """Populate the database from scratch or update it, depending on its status."""
-    create_database()  # If the tables are already there, it'll do nothing.
+    # create_database()  # TODO: Shouldn't need this. Back up database.
 
     for sub in get_portfolio():
-        symbol = sub["symbol"]
+        symbol = sub.symbol
 
         # Check if forecast_time was in the last 15 minutes.
         # TODO: If empty, it should fill regardless of time_check().
-        if time_check(symbol, "forecast"):
-            pass
-        else:
-            continue
-
-        data_symbol = sub["data_symbol"]
+        # if time_check(symbol, "forecast"): # TODO: Uncomment; use pytz timestamps in db.
+        #     pass
+        # else:
+        #     continue
 
         empty, up_to_date, latestDate = check_table_status(symbol)
 
@@ -758,10 +757,8 @@ if __name__ == "__main__":
         if up_to_date == False:
             log.info(f"{symbol}: No data for yesterday. Attempting update.")
 
-            if sub["data_source"] == "Binance":
-                dates_closes = get_binance_data(empty, latestDate)
-            elif sub["data_source"] == "Yahoo":
-                dates_closes = get_yfinance_data(symbol, data_symbol, empty, latestDate)
+            # Assumes all assets are crypto and we always want to use Binance for data
+            dates_closes = get_binance_data(empty, latestDate)
 
             # Update table with closes, EMAs, forecast, and instrument risk
             insert_closes_into_table(symbol, dates_closes)
