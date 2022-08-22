@@ -10,9 +10,7 @@ from typing import Tuple
 import numpy as np
 import requests
 import tulipy as ti
-import yahoo_fin.stock_info as si
 
-from src import subsystems
 from src import telegram_bot as tg
 from src.time_checker import time_check
 from src.database_2 import get_portfolio
@@ -34,121 +32,6 @@ def connect():
     cursor = connection.cursor()
 
     return connection, cursor
-
-
-# def get_portfolio():
-#     """Get portfolio of instruments from the 'portfolio' table."""
-#     _, cursor = connect()
-#     cursor.execute(
-#         """
-#         SELECT symbol, base_currency, quote_currency, exchange
-#         FROM portfolio
-#         """
-#     )
-
-#     # rows = cursor.fetchall()
-
-#     # portfolio = []
-
-#     # for row in rows:
-#     #     portfolio.append(
-#     #         {
-#     #             "symbol": row["symbol"],
-#     #             "exchange": row["exchange"],
-#     #             "data_source": "Binance",
-#     #             "data_symbol": "",
-#     #             "currency": row["base_currency"],
-#     #             "order_time": [7, 0],
-#     #             "forecast_time": [6, 0],  # CryptoCompare closes are at 00:00 GMT
-#     #             "time_zone": "Europe/London",
-#     #         }
-#     #     )
-
-    return portfolio
-
-
-def create_portfolio_table() -> None:
-    """Create 'portfolio' table in database."""
-    log.info(f"--- 'CREATING' PORTFOLIO TABLE ---")
-
-    connection, cursor = connect()
-
-    cursor.execute(
-        f"""
-        CREATE TABLE IF NOT EXISTS 'portfolio'(
-            symbol NOT NULL UNIQUE PRIMARY KEY,
-            base_currency NOT NULL,
-            quote_currency NOT NULL,
-            exchange NOT NULL
-        )
-        """
-    )
-
-    for sub in subsystems.db:
-        try:
-            cursor.execute(
-                f"""
-                INSERT INTO 'portfolio' (symbol, base_currency, quote_currency, exchange)
-                VALUES (?, ?, ?, ?)
-                """,
-                (
-                    sub["symbol"],
-                    sub["base_currency"],
-                    sub["quote_currency"],
-                    sub["exchange"],
-                ),
-            )
-        except Exception as exc:
-            log.exception(exc)
-
-    connection.commit()
-
-    log.info("--- 'Portfolio' Table 'Created' ---")
-
-
-def create_database() -> None:
-    """Create tables in database if they don't already exist."""
-    log.info(f"--- 'CREATING' TABLES ---")
-
-    connection, cursor = connect()
-
-    create_portfolio_table()
-
-    for sub in subsystems.db:
-        cursor.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {sub['symbol']}(
-                date NOT NULL UNIQUE PRIMARY KEY,
-                close NOT NULL,
-                ema_16,
-                ema_32,
-                ema_64,
-                ema_128,
-                ema_256,
-                stdev_returns_abs,
-                raw16_64,
-                raw32_128,
-                raw64_256,
-                fc1_avg,
-                fc1_scalar,
-                fc1_scaled,
-                fc1,
-                fc2_avg,
-                fc2_scalar,
-                fc2_scaled,
-                fc2,
-                fc3_avg,
-                fc3_scalar,
-                fc3_scaled,
-                fc3,
-                forecast,
-                instrument_risk
-            )"""
-        )
-
-    connection.commit()
-
-    log.info("--- Tables 'Created' ---")
 
 
 def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
@@ -307,35 +190,6 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
     date_array = np.flip(np.array(date_array_rev))
 
     dates_closes = list(zip(date_array, close_array))
-
-    return dates_closes
-
-
-def get_yfinance_data(
-    symbol: str, data_symbol: str, empty: bool, latest_date: str
-) -> list:
-    """Get Yahoo Finance data for a symbol.
-
-    Return a list of dates and daily closes.
-    """
-    data = si.get_data(data_symbol)
-
-    # Get yesterday's date so we begin with yesterday's close (00:00)
-    today = datetime.now()
-    oneDay = timedelta(days=1)
-    yesterday = today - oneDay
-
-    if empty:
-        data = data[(data.index.date <= yesterday.date())]
-    else:
-        latest_date = datetime.strptime(latest_date, "%Y-%m-%d").date()
-        data = data[
-            (data.index.date > latest_date) & (data.index.date <= yesterday.date())
-        ]
-
-    dates = [i.strftime("%Y-%m-%d") for i in data.index.date]
-    closes = np.around(data["close"].to_list(), 2)
-    dates_closes = list(zip(dates, closes))
 
     return dates_closes
 
@@ -719,21 +573,6 @@ def instrument_risk(symbol: str) -> None:
     log.info(f"--- {symbol}: Instrument Risk updated ---")
     log.info(f"Records Updated: {records}")
     log.info(f"Errors: {errors}")
-
-
-def drop_tables():
-    """Go through subsystems and drop each table listed there."""
-    log.info(f"--- DROPPING TABLES ---")
-    connection, cursor = connect()
-
-    for sub in subsystems.db:
-        cursor.execute(
-            f"""
-            DROP TABLE {sub['symbol']}
-            """
-        )
-
-    log.info("--- TABLES DROPPED ---")
 
 
 if __name__ == "__main__":
