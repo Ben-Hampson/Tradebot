@@ -105,21 +105,20 @@ def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
     with Session(engine) as session:
         stmt_latest = select(BTCUSD).order_by(BTCUSD.date.desc())
         latest_record = session.exec(stmt_latest).first()
+    
+    if latest_record:
+        up_to_date = latest_record.date == yesterday_date
 
-    up_to_date = latest_record.date == yesterday_date
-
-    if up_to_date:
-        log.info(f"{symbol} table is up to date.")
-        empty = False
-        up_to_date = True
-        latest_date = latest_record.date
-
-    elif latest_record:
-        log.info(f"{symbol} table is NOT up to date.")
-        empty = False
-        up_to_date = False
-        latest_date = latest_record.date
-
+        if up_to_date:
+            log.info(f"{symbol} table is up to date.")
+            empty = False
+            up_to_date = True
+            latest_date = latest_record.date
+        else:
+            log.info(f"{symbol} table is NOT up to date.")
+            empty = False
+            up_to_date = False
+            latest_date = latest_record.date
     else:
         log.info(f"{symbol} table is EMPTY.")
         empty = True
@@ -303,21 +302,13 @@ def left_pad(array: list, n: int, value):
 def calculate_emas(symbol: str) -> None:
     """Take an array of closes from a table and work out all the EMAs and raw forecasts."""
     log.info(f"--- {symbol}: Updating EMAs ---")
-    connection, cursor = connect()
 
-    # Get dates and closes from the table.
-    cursor.execute(
-        f"""
-        SELECT date, close
-        FROM {symbol}
-        ORDER BY date ASC
-        """
-    )
+    with Session(engine) as session:
+        stmt = select(BTCUSD).order_by(BTCUSD.date.asc())
+        rows = session.exec(stmt).all()
 
-    rows = cursor.fetchall()
-
-    close_data = [row["close"] for row in rows]
-    date_data = [row["date"] for row in rows]
+    close_data = [row.close for row in rows]
+    date_data = [row.date for row in rows]
 
     close_array = np.array(close_data)  # First = Oldest. Last = Latest
 
@@ -364,37 +355,25 @@ def calculate_emas(symbol: str) -> None:
     log.info(f"Input Length: {len(input)}")
 
     # Update table
-    records = 0
-    errors = 0
+    records = []
 
-    for i in input:
-        try:
-            cursor.execute(
-                f"""
-                UPDATE {symbol}
-                SET ema_16 = ?,
-                    ema_32 = ?,
-                    ema_64 = ?,
-                    ema_128 = ?,
-                    ema_256 = ?,
-                    stdev_returns_abs = ?,
-                    raw16_64 = ?,
-                    raw32_128 = ?,
-                    raw64_256 = ?
-                WHERE date = ?
-                """,
-                (i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9]),
-            )
-            records += 1
-        except Exception as e:
-            log.info(f"Exception: {e}")
-            errors += 1
-
-    connection.commit()
+    with Session(engine) as session:
+        for i in input:
+            stmt = select(BTCUSD).where(BTCUSD.date==i[9])
+            existing_record = session.exec(stmt).one()
+            existing_record.ema_16 = i[0]
+            existing_record.ema_32 = i[1]
+            existing_record.ema_64 = i[2]
+            existing_record.ema_128 = i[3]
+            existing_record.ema_256 = i[4]
+            existing_record.stdev_returns_abs = i[5]
+            existing_record.raw16_64 = i[6]
+            existing_record.raw32_128 = i[7]
+            existing_record.raw64_256 = i[8]
+            session.commit()
 
     log.info(f"--- {symbol}: EMAs updated ---")
-    log.info(f"Records Updated: {records}")
-    log.info(f"Errors: {errors}")
+    log.info(f"Records Updated: {len(records)}")
 
 
 def scale_and_cap_raw_forecast(
