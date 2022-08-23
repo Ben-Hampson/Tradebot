@@ -382,9 +382,9 @@ def scale_and_cap_raw_forecast(
     """Take a raw forecast and calculate the scaled and capped forecast."""
     raw_forecast = np.array(
         [
-            row[f"raw{ema_fast}_{ema_slow}"]
+            getattr(row, f"raw{ema_fast}_{ema_slow}")
             for row in rows
-            if row[f"raw{ema_fast}_{ema_slow}"] != None
+            if getattr(row, f"raw{ema_fast}_{ema_slow}") != None
         ]
     )
 
@@ -407,18 +407,12 @@ def scale_and_cap_raw_forecast(
 def combined_forecast(symbol: str) -> None:
     """Take the raw forecasts and turn them into a combined forecast."""
     log.info(f"--- {symbol}: Updating Forecast ---")
-    connection, cursor = connect()
 
-    cursor.execute(
-        f"""SELECT date, raw16_64, raw32_128, raw64_256
-                    FROM {symbol}
-                    ORDER BY date ASC
-                    """
-    )
+    with Session(engine) as session:
+        stmt = select(BTCUSD).order_by(BTCUSD.date.asc())
+        rows = session.exec(stmt).all()
 
-    rows = cursor.fetchall()
-
-    date_data = [row["date"] for row in rows]
+    date_data = [row.date for row in rows]
 
     fc1_avg, fc1_scalar, fc1_scaled, fc1 = scale_and_cap_raw_forecast(rows, 16, 64)
     fc2_avg, fc2_scalar, fc2_scaled, fc2 = scale_and_cap_raw_forecast(rows, 32, 128)
@@ -426,22 +420,22 @@ def combined_forecast(symbol: str) -> None:
 
     # Left pad the lists to make them equal length
     padding = len(date_data) - len(fc1)
-    fc1_avg = left_pad(fc1_avg, padding, np.nan)
-    fc1_scalar = left_pad(fc1_scalar, padding, np.nan)
-    fc1_scaled = left_pad(fc1_scaled, padding, np.nan)
-    fc1 = left_pad(fc1, padding, np.nan)
+    fc1_avg = left_pad(fc1_avg, padding, None)
+    fc1_scalar = left_pad(fc1_scalar, padding, None)
+    fc1_scaled = left_pad(fc1_scaled, padding, None)
+    fc1 = left_pad(fc1, padding, None)
 
     padding = len(date_data) - len(fc2)
-    fc2_avg = left_pad(fc2_avg, padding, np.nan)
-    fc2_scalar = left_pad(fc2_scalar, padding, np.nan)
-    fc2_scaled = left_pad(fc2_scaled, padding, np.nan)
-    fc2 = left_pad(fc2, padding, np.nan)
+    fc2_avg = left_pad(fc2_avg, padding, None)
+    fc2_scalar = left_pad(fc2_scalar, padding, None)
+    fc2_scaled = left_pad(fc2_scaled, padding, None)
+    fc2 = left_pad(fc2, padding, None)
 
     padding = len(date_data) - len(fc3)
-    fc3_avg = left_pad(fc3_avg, padding, np.nan)
-    fc3_scalar = left_pad(fc3_scalar, padding, np.nan)
-    fc3_scaled = left_pad(fc3_scaled, padding, np.nan)
-    fc3 = left_pad(fc3, padding, np.nan)
+    fc3_avg = left_pad(fc3_avg, padding, None)
+    fc3_scalar = left_pad(fc3_scalar, padding, None)
+    fc3_scaled = left_pad(fc3_scaled, padding, None)
+    fc3 = left_pad(fc3, padding, None)
 
     weighted_forecast = (fc1 * 0.42) + (fc2 * 0.16) + (fc3 * 0.42)
     forecast_diversification_multiplier = 1.06
@@ -470,57 +464,30 @@ def combined_forecast(symbol: str) -> None:
         )
     )
 
-    # Add to table
-    records = 0
-    errors = 0
+    # Update table
+    records = []
 
-    for i in input:
-        try:
-            cursor.execute(
-                f"""
-                UPDATE {symbol}
-                SET fc1_avg = ?,
-                    fc1_scalar = ?,
-                    fc1_scaled = ?,
-                    fc1 = ?,
-                    fc2_avg = ?,
-                    fc2_scalar = ?,
-                    fc2_scaled = ?,
-                    fc2 = ?,
-                    fc3_avg = ?,
-                    fc3_scalar = ?,
-                    fc3_scaled = ?,
-                    fc3 = ?,
-                    forecast = ?
-                WHERE date = ?
-                """,
-                (
-                    i[0],
-                    i[1],
-                    i[2],
-                    i[3],
-                    i[4],
-                    i[5],
-                    i[6],
-                    i[7],
-                    i[8],
-                    i[9],
-                    i[10],
-                    i[11],
-                    i[12],
-                    i[13],
-                ),
-            )
-            records += 1
-        except Exception as e:
-            log.info(f"Exception: {e}")
-            errors += 1
-
-    connection.commit()
+    with Session(engine) as session:
+        for i in input:
+            stmt = select(BTCUSD).where(BTCUSD.date==i[13])
+            existing_record = session.exec(stmt).one()
+            existing_record.fc1_avg = i[0]
+            existing_record.fc1_scalar = i[1]
+            existing_record.fc1_scaled = i[2]
+            existing_record.fc1 = i[3]
+            existing_record.fc2_avg = i[4]
+            existing_record.fc2_scalar = i[5]
+            existing_record.fc2_scaled = i[6]
+            existing_record.fc2 = i[7]
+            existing_record.fc3_avg = i[8]
+            existing_record.fc3_scalar = i[9]
+            existing_record.fc3_scaled = i[10]
+            existing_record.fc3 = i[11]
+            existing_record.forecast = i[12]
+            session.commit()
 
     log.info(f"--- {symbol}: Forecast updated ---")
-    log.info(f"Records Updated: {records}")
-    log.info(f"Errors: {errors}")
+    log.info(f"Records Updated: {len(records)}")
 
 
 def instrument_risk(symbol: str) -> None:
