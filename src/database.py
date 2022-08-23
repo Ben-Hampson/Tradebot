@@ -137,7 +137,6 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
     Return a list of dates and daily closes.
     """
     log.info(f"--- BTCUSDT: Populating Table ---")
-    connection, cursor = connect()
 
     # Get yesterday's date so we begin with yesterday's close (00:00)
     today = datetime.now()
@@ -146,15 +145,6 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
     yesterday_date = yesterday.strftime("%Y-%m-%d")
     toTimestamp = int(datetime.timestamp(yesterday))
     log.info(f"toTimestamp: {yesterday_date}")
-
-    # Do we have items in the table?
-    cursor.execute(
-        """SELECT *
-                      FROM BTCUSD
-                      ORDER BY date ASC"""
-    )
-
-    rows = cursor.fetchall()
 
     close_array_rev = []
     date_array_rev = []
@@ -237,30 +227,18 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
 
 def insert_closes_into_table(symbol: str, dates_closes: list) -> None:
     """Insert closes and dates into a table."""
-    connection, cursor = connect()
-
-    records = 0
-    errors = 0
+    records = []
 
     for i in dates_closes:
-        try:
-            cursor.execute(
-                f"""
-                INSERT INTO {symbol} (date, close)
-                VALUES (?, ?)
-                """,
-                (i[0], i[1]),
-            )
-            records += 1
-        except Exception as e:
-            log.info(f"Exception: {e}")
-            errors += 1
-
-    connection.commit()
+        record = BTCUSD(date=i[0], close=i[1])
+        records.append(record)
+    
+    with Session(engine) as session:
+        session.add_all(records)
+        session.commit()
 
     log.info(f"--- {symbol}: table populated ---")
-    log.info(f"Records Added: {records}")
-    log.info(f"Errors: {errors}")
+    log.info(f"Records Added: {len(records)}")
 
 
 def ema_array(close_array: list, ema_length: int):
