@@ -5,7 +5,7 @@ import os
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 import numpy as np
 import requests
@@ -13,13 +13,63 @@ import tulipy as ti
 
 from src import telegram_bot as tg
 from src.time_checker import time_check
-from src.database_2 import get_portfolio
+
+from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 log = logging.getLogger(__name__)
+
+
+class Instrument(SQLModel, table=True):
+    __tablename__ = "portfolio"  # TODO: Maybe should just be "instrument"?
+    # id: Optional[int] = Field(default=None, primary_key=True)
+    symbol: str = Field(default=None, primary_key=True)
+    base_currency: str  # TODO: Change to base_currency
+    quote_currency: str
+    # order_time: list  # TODO: Make it a UTC time
+    # forecast_time: list  # TODO: Make it a UTC time
+    # time_zone: str  # TODO: Make it a pytz timezone
+    exchange: str
+
+class BTCUSD(SQLModel, table=True):
+    __tablename__ = "BTCUSD"  # TODO: Maybe should just be "Instrument"?
+    date: str = Field(default=None, primary_key=True)  # Make it a datetime?
+    close: float
+    ema_16: float
+    ema_32: float
+    ema_64: float
+    ema_128: float
+    ema_256: float
+    stdev_returns_abs: float
+    raw16_64: float
+    raw32_128: float
+    raw64_256: float
+    fc1_avg: float
+    fc1_scalar: float
+    fc1_scaled: float
+    fc1: float
+    fc2_avg: float
+    fc2_scalar: float
+    fc2_scaled: float
+    fc2: float
+    fc3_avg: float
+    fc3_scalar: float
+    fc3_scaled: float
+    fc3: float
+    forecast: float
+    instrument_risk: float
+
+
+path = Path(__file__).parent.parent
+APP_DB = path.joinpath("data/data.db")
+
+sqlite_file_name = "data.db"
+sqlite_url = f"sqlite:///{APP_DB}"
+
+engine = create_engine(sqlite_url)
 
 
 def connect():
@@ -33,15 +83,16 @@ def connect():
 
     return connection, cursor
 
+def get_portfolio():
+    """Get instruments from 'portfolio' table."""
+    with Session(engine) as session:
+        statement = select(Instrument)
+        results = session.exec(statement).all()
+    return results
 
 def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
-    """Get status of database records.
-
-    If up to date, skip to ema_BTCUSDT.py
-    Else, go to populate_BTCUSDT.py
-    """
+    """Get status of database records."""
     log.info(f"--- {symbol} Status ---")
-    connection, cursor = connect()
 
     # Get yesterday's date so we begin with yesterday's close (00:00)
     today = datetime.now()
@@ -51,43 +102,33 @@ def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
     log.info(f"toTimestamp: {yesterday_date}")
 
     # Get latest records
-    cursor.execute(
-        f"""
-        SELECT date, close, forecast, instrument_risk
-        FROM {symbol}
-        ORDER BY date ASC
-        """
-    )
+    with Session(engine) as session:
+        stmt_latest = select(BTCUSD).order_by(BTCUSD.date.desc())
+        latest_record = session.exec(stmt_latest).first()
 
-    rows = cursor.fetchall()
+    up_to_date = latest_record.date == yesterday_date
 
-    if len(rows) == 0:
-        log.info(f"{symbol} table is EMPTY.")
+    if up_to_date:
+        log.info(f"{symbol} table is up to date.")
+        empty = False
+        up_to_date = True
+        latest_date = latest_record.date
+
+    elif latest_record:
+        log.info(f"{symbol} table is NOT up to date.")
+        empty = False
         up_to_date = False
-        empty = True
-        latest_date = ""
+        latest_date = latest_record.date
+
     else:
-        # No. of Records
-        log.info(f"{symbol} records: {len(rows)}")
-
-        # Get the most recent record's date
-        latest_date = rows[-1]["date"]
-        log.info(f"Latest Date in {symbol} table: {latest_date}")
-
-        # Determine if table is up to date, or not, or empty
-        if latest_date == yesterday_date:
-            up_to_date = True
-            empty = False
-            log.info(f"{symbol} table up to date. No update needed.")
-        else:
-            up_to_date = False
-            empty = False
-            log.info(f"{symbol} table NOT up to date.")
+        log.info(f"{symbol} table is EMPTY.")
+        empty = True
+        up_to_date = False
+        latest_date = ""
 
     log.info(f"--- Finished checking {symbol} table ---")
 
     return empty, up_to_date, latest_date
-
 
 def get_binance_data(empty: bool, latest_date: str) -> list:
     """Get Binance data for a pair.
@@ -577,8 +618,6 @@ def instrument_risk(symbol: str) -> None:
 
 if __name__ == "__main__":
     """Populate the database from scratch or update it, depending on its status."""
-    # create_database()  # TODO: Shouldn't need this. Back up database.
-
     for sub in get_portfolio():
         symbol = sub.symbol
 
