@@ -370,7 +370,7 @@ def calculate_emas(symbol: str) -> None:
             existing_record.raw16_64 = i[6]
             existing_record.raw32_128 = i[7]
             existing_record.raw64_256 = i[8]
-            session.commit()
+        session.commit()
 
     log.info(f"--- {symbol}: EMAs updated ---")
     log.info(f"Records Updated: {len(records)}")
@@ -484,7 +484,7 @@ def combined_forecast(symbol: str) -> None:
             existing_record.fc3_scaled = i[10]
             existing_record.fc3 = i[11]
             existing_record.forecast = i[12]
-            session.commit()
+        session.commit()
 
     log.info(f"--- {symbol}: Forecast updated ---")
     log.info(f"Records Updated: {len(records)}")
@@ -493,18 +493,13 @@ def combined_forecast(symbol: str) -> None:
 def instrument_risk(symbol: str) -> None:
     """Find the instrument risk / price volatility of a symbol. In percent. 0.5 = 50%."""
     log.info(f"--- {symbol}: Updating Instrument Risk ---")
-    connection, cursor = connect()
 
-    cursor.execute(
-        f"""SELECT date, close
-                    FROM {symbol}
-                    ORDER BY date ASC"""
-    )
+    with Session(engine) as session:
+        stmt = select(BTCUSD).order_by(BTCUSD.date.asc())
+        rows = session.exec(stmt).all()
 
-    rows = cursor.fetchall()
-
-    date_data = [row["date"] for row in rows]
-    close_data = [row["close"] for row in rows]
+    date_data = [row.date for row in rows]
+    close_data = [row.close for row in rows]
 
     close_array = np.array(close_data)
 
@@ -515,29 +510,17 @@ def instrument_risk(symbol: str) -> None:
     # Add to table
     input = list(zip(instrument_risk, date_data))
 
-    records = 0
-    errors = 0
+    records = []
 
-    for i in input:
-        try:
-            cursor.execute(
-                f"""
-                UPDATE {symbol}
-                SET instrument_risk = ?
-                WHERE date = ?
-                """,
-                (i[0], i[1]),
-            )
-            records += 1
-        except Exception as e:
-            log.info(f"Exception: {e}")
-            errors += 1
-
-    connection.commit()
+    with Session(engine) as session:
+        for i in input:
+            stmt = select(BTCUSD).where(BTCUSD.date==i[1])
+            existing_record = session.exec(stmt).one()
+            existing_record.instrument_risk = i[0]
+        session.commit()
 
     log.info(f"--- {symbol}: Instrument Risk updated ---")
-    log.info(f"Records Updated: {records}")
-    log.info(f"Errors: {errors}")
+    log.info(f"Records Updated: {len(records)}")
 
 
 if __name__ == "__main__":
