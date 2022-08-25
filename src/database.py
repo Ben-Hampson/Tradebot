@@ -2,7 +2,7 @@
 
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from pathlib import Path
 from typing import Tuple
 
@@ -22,16 +22,15 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 class Instrument(SQLModel, table=True):
-    __tablename__ = "portfolio"  # TODO: Maybe should just be "instrument"?
+    __tablename__ = "portfolio"  # TODO: Maybe should just be "instrument"? That's the noun.
     symbol: str = Field(default=None, primary_key=True)
-    base_currency: str  # TODO: Change to base_currency
+    base_currency: str
     quote_currency: str
     exchange: str
-    # vehicle: str
-    # time_zone: str
-    # order_time: datetime
-    # forecast_time: datetime
-    # exchange_iso: str
+    vehicle: str
+    time_zone: str
+    order_time: time
+    forecast_time: time
 
 
 class BTCUSD(SQLModel, table=True):
