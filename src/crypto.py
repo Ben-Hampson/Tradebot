@@ -1,11 +1,14 @@
 import logging
 from functools import cached_property
+from sqlmodel import select
 from typing import Union
 import os
 
 from forex_python.converter import CurrencyCodes, CurrencyRates
+from sqlmodel import Session
 
-from src.database import connect
+from src import database
+from src.database import engine
 from src.dydx_exchange import dYdXExchange
 from src.tools import round_decimals_down
 
@@ -88,23 +91,15 @@ class Instrument:
     @cached_property
     def latest_record(self) -> dict:
         """Get the latest record for the instrument from the database."""
-        _, cursor = connect()
-        cursor.execute(
-            f"""
-            SELECT date, close, forecast, instrument_risk
-            FROM {self.symbol}
-            ORDER BY date DESC
-            LIMIT 1
-            """
-        )
-
-        rows = cursor.fetchall()
+        with Session(engine()) as session:
+            stmt = select(database.BTCUSD).order_by(database.BTCUSD.date.desc())
+            latest_record = session.exec(stmt).first()
 
         return {
-            "date": rows[0]["date"],
-            "close": rows[0]["close"],
-            "forecast": rows[0]["forecast"],
-            "risk": rows[0]["instrument_risk"],
+            "date": latest_record.date,
+            "close": latest_record.close,
+            "forecast": latest_record.forecast,
+            "risk": latest_record.instrument_risk,
         }
 
     @cached_property

@@ -6,7 +6,7 @@ from textwrap import dedent
 
 from src import telegram_bot as tg
 from src.crypto import Instrument
-from src.database import connect
+from src.database import get_portfolio
 from src.time_checker import time_check
 
 logging.basicConfig(
@@ -20,32 +20,23 @@ def main():
     """Get portfolio. Create Instruments for each one."""
     log.info("Trading Mode: %s", os.getenv("TRADING_MODE", "PAPER"))
 
-    # TODO: Use sqlalchemy
-    _, cursor = connect()
-    cursor.execute(
-        """
-        SELECT symbol, base_currency, quote_currency, exchange
-        FROM portfolio
-        """
-    )
+    portfolio = get_portfolio()
 
-    rows = cursor.fetchall()
-
-    if not rows:
+    if not portfolio:
         log.error("No Instruments in 'portfolio' in database. Stopping.")
         sys.exit()
 
-    sub_weight = 1 / len(rows)
+    sub_weight = 1 / len(portfolio)
 
     portfolio = (
         Instrument(
-            row["symbol"],
-            row["exchange"],
-            row["base_currency"],
-            row["quote_currency"],
+            row.symbol,
+            row.exchange,
+            row.base_currency,
+            row.quote_currency,
             sub_weight,
         )
-        for row in rows
+        for row in portfolio
     )
 
     for instrument in portfolio:

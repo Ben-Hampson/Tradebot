@@ -2,10 +2,9 @@
 
 import logging
 import os
-import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple
 
 import numpy as np
 import requests
@@ -14,7 +13,7 @@ import tulipy as ti
 from src import telegram_bot as tg
 from src.time_checker import time_check
 
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import SQLModel, Session, create_engine, select, Field
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -22,17 +21,18 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
-
 class Instrument(SQLModel, table=True):
     __tablename__ = "portfolio"  # TODO: Maybe should just be "instrument"?
-    # id: Optional[int] = Field(default=None, primary_key=True)
     symbol: str = Field(default=None, primary_key=True)
     base_currency: str  # TODO: Change to base_currency
     quote_currency: str
-    # order_time: list  # TODO: Make it a UTC time
-    # forecast_time: list  # TODO: Make it a UTC time
-    # time_zone: str  # TODO: Make it a pytz timezone
     exchange: str
+    # vehicle: str
+    # time_zone: str
+    # order_time: datetime
+    # forecast_time: datetime
+    # exchange_iso: str
+
 
 class BTCUSD(SQLModel, table=True):
     __tablename__ = "BTCUSD"  # TODO: Maybe should just be "Instrument"?
@@ -63,29 +63,18 @@ class BTCUSD(SQLModel, table=True):
     instrument_risk: float
 
 
-path = Path(__file__).parent.parent
-APP_DB = path.joinpath("data/data.db")
-
-sqlite_file_name = "data.db"
-sqlite_url = f"sqlite:///{APP_DB}"
-
-engine = create_engine(sqlite_url)
-
-
-def connect():
-    """Connect to database in data/data.db"""
+def engine():
+    """Connect to database."""
     path = Path(__file__).parent.parent
     APP_DB = path.joinpath("data/data.db")
 
-    connection = sqlite3.connect(APP_DB)
-    connection.row_factory = sqlite3.Row
-    cursor = connection.cursor()
+    sqlite_url = f"sqlite:///{APP_DB}"
 
-    return connection, cursor
+    return create_engine(sqlite_url)
 
 def get_portfolio():
     """Get instruments from 'portfolio' table."""
-    with Session(engine) as session:
+    with Session(engine()) as session:
         statement = select(Instrument)
         results = session.exec(statement).all()
     return results
@@ -102,7 +91,7 @@ def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
     log.info(f"toTimestamp: {yesterday_date}")
 
     # Get latest records
-    with Session(engine) as session:
+    with Session(engine()) as session:
         stmt_latest = select(BTCUSD).order_by(BTCUSD.date.desc())
         latest_record = session.exec(stmt_latest).first()
     
@@ -232,7 +221,7 @@ def insert_closes_into_table(symbol: str, dates_closes: list) -> None:
         record = BTCUSD(date=i[0], close=i[1])
         records.append(record)
     
-    with Session(engine) as session:
+    with Session(engine()) as session:
         session.add_all(records)
         session.commit()
 
@@ -303,7 +292,7 @@ def calculate_emas(symbol: str) -> None:
     """Take an array of closes from a table and work out all the EMAs and raw forecasts."""
     log.info(f"--- {symbol}: Updating EMAs ---")
 
-    with Session(engine) as session:
+    with Session(engine()) as session:
         stmt = select(BTCUSD).order_by(BTCUSD.date.asc())
         rows = session.exec(stmt).all()
 
@@ -357,7 +346,7 @@ def calculate_emas(symbol: str) -> None:
     # Update table
     records = []
 
-    with Session(engine) as session:
+    with Session(engine()) as session:
         for i in input:
             stmt = select(BTCUSD).where(BTCUSD.date==i[9])
             existing_record = session.exec(stmt).one()
@@ -408,7 +397,7 @@ def combined_forecast(symbol: str) -> None:
     """Take the raw forecasts and turn them into a combined forecast."""
     log.info(f"--- {symbol}: Updating Forecast ---")
 
-    with Session(engine) as session:
+    with Session(engine()) as session:
         stmt = select(BTCUSD).order_by(BTCUSD.date.asc())
         rows = session.exec(stmt).all()
 
@@ -467,7 +456,7 @@ def combined_forecast(symbol: str) -> None:
     # Update table
     records = []
 
-    with Session(engine) as session:
+    with Session(engine()) as session:
         for i in input:
             stmt = select(BTCUSD).where(BTCUSD.date==i[13])
             existing_record = session.exec(stmt).one()
@@ -494,7 +483,7 @@ def instrument_risk(symbol: str) -> None:
     """Find the instrument risk / price volatility of a symbol. In percent. 0.5 = 50%."""
     log.info(f"--- {symbol}: Updating Instrument Risk ---")
 
-    with Session(engine) as session:
+    with Session(engine()) as session:
         stmt = select(BTCUSD).order_by(BTCUSD.date.asc())
         rows = session.exec(stmt).all()
 
@@ -512,7 +501,7 @@ def instrument_risk(symbol: str) -> None:
 
     records = []
 
-    with Session(engine) as session:
+    with Session(engine()) as session:
         for i in input:
             stmt = select(BTCUSD).where(BTCUSD.date==i[1])
             existing_record = session.exec(stmt).one()
@@ -530,10 +519,10 @@ if __name__ == "__main__":
 
         # Check if forecast_time was in the last 15 minutes.
         # TODO: If empty, it should fill regardless of time_check().
-        # if time_check(symbol, "forecast"): # TODO: Uncomment; use pytz timestamps in db.
-        #     pass
-        # else:
-        #     continue
+        if time_check(symbol, "forecast"): # TODO: Uncomment; use pytz timestamps in db.
+            pass
+        else:
+            continue
 
         empty, up_to_date, latestDate = check_table_status(symbol)
 
