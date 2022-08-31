@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 def exchange_factory(exchange: str):
     """Factory for Exchange classes."""
-    if exchange.lower() == "crypto":
+    if exchange.lower() == "dydx":
         return dYdXExchange()
     if exchange.lower() == "stock":
         log.error("Stock exchange not implemented yet.")
