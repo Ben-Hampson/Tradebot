@@ -204,7 +204,7 @@ def get_binance_data(empty: bool, latest_date: str) -> list:
 
     dates_closes = list(zip(date_array, close_array))
 
-    return dates_closes
+    return dates_closes[1:]
 
 def insert_closes_into_table(symbol: str, dates_closes: list) -> None:
     """Insert closes and dates into a table."""

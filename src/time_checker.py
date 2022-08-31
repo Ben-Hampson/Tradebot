@@ -7,7 +7,9 @@ import exchange_calendars as ecals
 import pandas as pd
 import pytz
 
-from src.subsystems import db
+from src.database import engine, Instrument
+
+from sqlmodel import select, Session
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -24,26 +26,23 @@ def time_check(symbol: str, checkpoint_type: str) -> bool:
     log.info(f"--- {symbol} ---")
 
     # Subsystem Details
-    sub = next(item for item in db if item["symbol"] == symbol)
+    with Session(engine) as session:
+        sub_stmt = select(Instrument).where(Instrument.symbol == symbol)
+        sub = session.exec(sub_stmt).one()
+
     if checkpoint_type == "order":
-        checkpoint = sub["order_time"]
+        checkpoint = sub.order_time
     elif checkpoint_type == "forecast":
-        checkpoint = sub["forecast_time"]
+        checkpoint = sub.forecast_time
     else:
         raise Exception("checkpoint argument must be 'order' or 'forecast'")
 
-    contract_time_zone = pytz.timezone(sub["time_zone"])
+    contract_time_zone = pytz.timezone(sub.time_zone)
     local_time = datetime.datetime.now(contract_time_zone)
     log.info(f"{symbol} Local Time: {local_time}")
 
-    order_time = datetime.datetime(
-        local_time.year,
-        local_time.month,
-        local_time.day,
-        checkpoint[0],
-        checkpoint[1],
-        0,
-    )
+    order_time = datetime.datetime.combine(local_time.date(), checkpoint)
+
     order_time = contract_time_zone.localize(order_time)
     log.info(f"{symbol} {checkpoint_type.title()} time: {order_time}")
 
@@ -70,9 +69,13 @@ def time_check(symbol: str, checkpoint_type: str) -> bool:
 
 def exchange_open_check(symbol: str) -> bool:
     """Check if the exchange for the given symbol is open today or not."""
-    sub = next(item for item in db if item["symbol"] == symbol)
-    exchange = sub["exchange_iso"]
-    time_zone = sub["time_zone"]
+    # Currently unused because we're only trading crypto.
+    with Session(engine) as session:
+        sub_stmt = select(Instrument).where(Instrument.symbol == symbol)
+        sub = session.exec(sub_stmt).one()
+    
+    exchange = sub.exchange_iso
+    time_zone = sub.time_zone
     now = pd.Timestamp.today(tz=time_zone)
 
     if exchange:
