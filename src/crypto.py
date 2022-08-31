@@ -91,7 +91,7 @@ class Instrument:
     @cached_property
     def latest_record(self) -> dict:
         """Get the latest record for the instrument from the database."""
-        with Session(engine()) as session:
+        with Session(engine) as session:
             stmt = select(database.BTCUSD).order_by(database.BTCUSD.date.desc())
             latest_record = session.exec(stmt).first()
 

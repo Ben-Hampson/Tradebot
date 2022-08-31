@@ -1,4 +1,4 @@
-"""Run strategy for subsystems and update the database."""
+"""SQLModel components for connecting to the database."""
 
 import logging
 import os
@@ -62,18 +62,16 @@ class BTCUSD(SQLModel, table=True):
     instrument_risk: float
 
 
-def engine():
-    """Connect to database."""
-    path = Path(__file__).parent.parent
-    APP_DB = path.joinpath("data/data.db")
+path = Path(__file__).parent.parent
+APP_DB = path.joinpath("data/data.db")
 
-    sqlite_url = f"sqlite:///{APP_DB}"
+sqlite_url = f"sqlite:///{APP_DB}"
 
-    return create_engine(sqlite_url)
+engine = create_engine(sqlite_url)
 
 def get_portfolio():
     """Get instruments from 'portfolio' table."""
-    with Session(engine()) as session:
+    with Session(engine) as session:
         statement = select(Instrument)
         results = session.exec(statement).all()
     return results
@@ -90,7 +88,7 @@ def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
     log.info(f"toTimestamp: {yesterday_date}")
 
     # Get latest records
-    with Session(engine()) as session:
+    with Session(engine) as session:
         stmt_latest = select(BTCUSD).order_by(BTCUSD.date.desc())
         latest_record = session.exec(stmt_latest).first()
     
@@ -220,7 +218,7 @@ def insert_closes_into_table(symbol: str, dates_closes: list) -> None:
         record = BTCUSD(date=i[0], close=i[1])
         records.append(record)
     
-    with Session(engine()) as session:
+    with Session(engine) as session:
         session.add_all(records)
         session.commit()
 
@@ -291,7 +289,7 @@ def calculate_emas(symbol: str) -> None:
     """Take an array of closes from a table and work out all the EMAs and raw forecasts."""
     log.info(f"--- {symbol}: Updating EMAs ---")
 
-    with Session(engine()) as session:
+    with Session(engine) as session:
         stmt = select(BTCUSD).order_by(BTCUSD.date.asc())
         rows = session.exec(stmt).all()
 
@@ -345,7 +343,7 @@ def calculate_emas(symbol: str) -> None:
     # Update table
     records = []
 
-    with Session(engine()) as session:
+    with Session(engine) as session:
         for i in input:
             stmt = select(BTCUSD).where(BTCUSD.date==i[9])
             existing_record = session.exec(stmt).one()
@@ -396,7 +394,7 @@ def combined_forecast(symbol: str) -> None:
     """Take the raw forecasts and turn them into a combined forecast."""
     log.info(f"--- {symbol}: Updating Forecast ---")
 
-    with Session(engine()) as session:
+    with Session(engine) as session:
         stmt = select(BTCUSD).order_by(BTCUSD.date.asc())
         rows = session.exec(stmt).all()
 
@@ -455,7 +453,7 @@ def combined_forecast(symbol: str) -> None:
     # Update table
     records = []
 
-    with Session(engine()) as session:
+    with Session(engine) as session:
         for i in input:
             stmt = select(BTCUSD).where(BTCUSD.date==i[13])
             existing_record = session.exec(stmt).one()
@@ -482,7 +480,7 @@ def instrument_risk(symbol: str) -> None:
     """Find the instrument risk / price volatility of a symbol. In percent. 0.5 = 50%."""
     log.info(f"--- {symbol}: Updating Instrument Risk ---")
 
-    with Session(engine()) as session:
+    with Session(engine) as session:
         stmt = select(BTCUSD).order_by(BTCUSD.date.asc())
         rows = session.exec(stmt).all()
 
@@ -500,7 +498,7 @@ def instrument_risk(symbol: str) -> None:
 
     records = []
 
-    with Session(engine()) as session:
+    with Session(engine) as session:
         for i in input:
             stmt = select(BTCUSD).where(BTCUSD.date==i[1])
             existing_record = session.exec(stmt).one()
