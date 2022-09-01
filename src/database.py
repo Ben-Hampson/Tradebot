@@ -62,9 +62,7 @@ class BTCUSD(SQLModel, table=True):
 path = Path(__file__).parent.parent
 APP_DB = path.joinpath("data/data.db")
 
-sqlite_url = f"sqlite:///{APP_DB}"
-
-engine = create_engine(sqlite_url)
+engine = create_engine(f"sqlite:///{APP_DB}")
 
 def get_portfolio():
     """Get instruments from 'portfolio' table."""
