@@ -1,4 +1,4 @@
-"""Runner to update OHLC data in database (assuming there's data in there already)."""
+"""Runner to update OHLC data in database."""
 import logging
 import os
 from typing import Optional

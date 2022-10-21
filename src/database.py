@@ -1,13 +1,9 @@
 """SQLModel components for connecting to the database."""
 
 import logging
-import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple
-
-import numpy as np
-import requests
 
 from sqlmodel import SQLModel, Session, create_engine, select, Field
 from src.models import Instrument
@@ -50,7 +46,7 @@ class BTCUSD(SQLModel, table=True):
 
 path = Path(__file__).parent.parent
 # APP_DB = path.joinpath("data/data.db")
-APP_DB = path.joinpath("data/data_test.db")
+APP_DB = path.joinpath("data/data_test.db")  # TODO: Base this on an env variable.
 
 engine = create_engine(f"sqlite:///{APP_DB}")
 
@@ -105,112 +101,3 @@ def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
     log.info(f"--- Finished checking {symbol} table ---")
 
     return empty, up_to_date, latest_date
-
-def get_binance_data(empty: bool, latest_date: str) -> list:
-    """Get Binance data for a pair.
-
-    Currently assumes symbol is BTCUSDT.
-    Return a list of dates and daily closes.
-    """
-    log.info(f"--- BTCUSDT: Populating Table ---")
-
-    # Get yesterday's date so we begin with yesterday's close (00:00)
-    today = datetime.now()
-    oneDay = timedelta(days=1)
-    yesterday = today - oneDay
-    yesterday_date = yesterday.strftime("%Y-%m-%d")
-    toTimestamp = int(datetime.timestamp(yesterday))
-    log.info(f"toTimestamp: {yesterday_date}")
-
-    close_array_rev = []
-    date_array_rev = []
-
-    if empty:
-        log.info("BTCUSDT table empty. Populating all available historic data.")
-        end = False
-        limit = 1000
-
-        while end == False:
-            data = requests.get(
-                "https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD"
-                + "&limit="
-                + str(limit)
-                + "&toTs="
-                + str(toTimestamp)
-                + "&api_key="
-                + os.getenv("CC_API_KEY")
-            ).json()
-
-            for bar in reversed(data["Data"]["Data"]):
-                timestamp = datetime.fromtimestamp(bar["time"])
-                date = timestamp.strftime("%Y-%m-%d")
-                close = bar["close"]
-                if close == 0:
-                    end = True
-                    log.info("Close = 0. Break.")
-                    break
-
-                close_array_rev.append(close)
-                date_array_rev.append(date)
-
-            # Get 'TimeFrom', take away 1 day, and then use it as 'toTimestamp' next time
-            TimeFrom = data["Data"]["TimeFrom"]
-            minusOneDay = datetime.fromtimestamp(TimeFrom) - oneDay
-            toTimestamp = datetime.timestamp(minusOneDay)
-
-    else:  # If not empty and not up to date
-        log.info(f"Latest Date in BTCUSDT table: {latest_date}")
-
-        # Get latestDate in Unix Time, to use as fromTime in API request
-        last = latest_date.split("-")
-        latestDateDT = datetime(int(last[0]), int(last[1]), int(last[2]))
-
-        # Set API limit
-        dateDiff = yesterday - latestDateDT
-        limit = dateDiff.days
-        log.info(f"# of days to get close data for: {limit}")
-
-        # Request data from API
-        data = requests.get(
-            "https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD"
-            + "&limit="
-            + str(limit)
-            + "&toTs="
-            + str(toTimestamp)
-            + "&api_key="
-            + os.getenv("CC_API_KEY")
-        ).json()
-
-        for bar in reversed(
-            data["Data"]["Data"][1:]
-        ):  # The API returns one more than you asked for, so ignore the first
-            timestamp = datetime.fromtimestamp(bar["time"])
-            date = timestamp.strftime("%Y-%m-%d")
-            close = float(bar["close"])
-            log.info(f"{date} - {close}")
-
-            close_array_rev.append(close)  # Returns: First = latest, last = oldest.
-            date_array_rev.append(date)
-
-    # Reverse arrays so that first = oldest, last = latest
-    close_array = np.flip(np.array(close_array_rev))
-    date_array = np.flip(np.array(date_array_rev))
-
-    dates_closes = list(zip(date_array, close_array))
-
-    return dates_closes[1:]
-
-def insert_closes_into_table(symbol: str, dates_closes: list) -> None:
-    """Insert closes and dates into a table."""
-    records = []
-
-    for i in dates_closes:
-        record = BTCUSD(date=i[0], close=i[1])
-        records.append(record)
-    
-    with Session(engine) as session:
-        session.add_all(records)
-        session.commit()
-
-    log.info(f"--- {symbol}: table populated ---")
-    log.info(f"Records Added: {len(records)}")
