@@ -2,5 +2,6 @@
 # The cron jobs run every 15 minutes but effectively they only run once per day
 # because those scripts check whether any subsystems require the script to fully run yet.
 
-0,15,30,45 * * * * cd /home && /venv/bin/python -m src.runners.runner_strategy >> /home/logs/database.log 2>&1
-5,20,35,50 * * * * cd /home && /venv/bin/python -m src.runners.runner_crypto >> /home/logs/crypto.log 2>&1
+# TODO: Add update_ohlc
+0,15,30,45 * * * * cd /home && /venv/bin/python -m src.runners.update_strategy >> /home/logs/update_strategy.log 2>&1
+5,20,35,50 * * * * cd /home && /venv/bin/python -m src.runners.order_crypto >> /home/logs/order_crypto.log 2>&1

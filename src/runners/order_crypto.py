@@ -73,8 +73,6 @@ def main():
 
     log.info("Finished.")
 
-    print("Finished")
-
 
 if __name__ == "__main__":
     main()

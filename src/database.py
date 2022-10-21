@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Tuple
 
 from sqlmodel import SQLModel, Session, create_engine, select, Field
-from src.models import Instrument
+from src.models import EMACStrategy, Instrument
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -15,7 +15,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-class BTCUSD(SQLModel, table=True):
+class BTCUSD(SQLModel, table=True):  # TODO: Delete. Use models.OHLC + models.EMACStrategy
     __tablename__ = "BTCUSD"  # TODO: Maybe should just be "Instrument"?
     date: str = Field(default=None, primary_key=True)  # Make it a datetime?
     close: float

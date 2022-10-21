@@ -5,7 +5,8 @@ import logging
 from src import database as db
 from src import telegram_bot as tg
 from src import strategy
-from src.database import engine, Instrument, get_portfolio
+from src.database import engine, get_portfolio
+from src.models import Instrument
 from src.runners import update_ohlc
 
 from sqlmodel import select, Session

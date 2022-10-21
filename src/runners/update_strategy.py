@@ -16,13 +16,13 @@ log = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
-    """Populate the database from scratch or update it, depending on its status."""    
+    """Populate the EMACStrategy table from scratch or update it, depending on its status."""    
     for sub in get_portfolio():
         symbol = sub.symbol
 
         # Check if forecast_time was in the last 15 minutes.
         # TODO: If empty, it should fill regardless of time_check().
-        if time_check(symbol, "forecast"): # TODO: Uncomment; use pytz timestamps in db.
+        if time_check(symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
             pass
         else:
             continue
