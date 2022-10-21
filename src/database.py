@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Tuple
 
 from sqlmodel import SQLModel, Session, create_engine, select, Field
-from src.models import EMACStrategy, Instrument
+from src.models import Instrument
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -57,11 +57,22 @@ def create_db_and_tables():
     SQLModel.metadata.create_all(engine_test)
 
 def get_portfolio():
-    """Get instruments from 'portfolio' table."""
+    """Get all instruments from 'portfolio' table."""
     with Session(engine) as session:
         statement = select(Instrument)
         results = session.exec(statement).all()
     return results
+
+def get_instrument(symbol: str) -> Instrument:
+    """Get a single Instrument from the portfolio.
+
+    Args:
+        symbol: Ticker symbol e.g. BTCUSD.
+
+    Returns:
+        Instrument SQLModel object.
+    """
+    return next(x for x in get_portfolio() if x.symbol == symbol)
 
 def check_table_status(symbol: str) -> Tuple[bool, bool, str]:
     """Get status of database records."""
