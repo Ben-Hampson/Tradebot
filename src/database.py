@@ -2,32 +2,21 @@
 
 import logging
 import os
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple
 
 import numpy as np
 import requests
 
-
 from sqlmodel import SQLModel, Session, create_engine, select, Field
+from src.models import Instrument
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 log = logging.getLogger(__name__)
-
-class Instrument(SQLModel, table=True):
-    __tablename__ = "portfolio"  # TODO: Maybe should just be "instrument"? That's the noun.
-    symbol: str = Field(default=None, primary_key=True)
-    base_currency: str
-    quote_currency: str
-    exchange: str
-    vehicle: str
-    time_zone: str
-    order_time: time
-    forecast_time: time
 
 
 class BTCUSD(SQLModel, table=True):

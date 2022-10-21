@@ -6,6 +6,7 @@ from src import database as db
 from src import telegram_bot as tg
 from src import strategy
 from src.database import engine, Instrument, get_portfolio
+from src.runners import update_ohlc
 
 from sqlmodel import select, Session
 
@@ -28,10 +29,8 @@ def run(symbol: str):
     if up_to_date is False:
         log.info(f"{sub.symbol}: No data for yesterday. Attempting update.")
 
-        # Assumes all assets are crypto and we always want to use Binance for data
-        dates_closes = db.get_binance_data(empty, latest_date)
-
-        db.insert_closes_into_table(sub.symbol, dates_closes)
+        # Assumes all assets are crypto
+        update_ohlc.main(sub.symbol)
 
         strategy.calculate_emas(sub.symbol)
         strategy.combined_forecast(sub.symbol)

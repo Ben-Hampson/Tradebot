@@ -1,9 +1,8 @@
 """Models for database."""
 
-from sqlmodel import Field, SQLModel, create_engine
+from sqlmodel import Field, SQLModel
 from datetime import time, datetime
 from typing import Optional
-from pathlib import Path
 
 class Instrument(SQLModel, table=True):
     symbol: str = Field(default=None, primary_key=True)
@@ -16,7 +15,7 @@ class Instrument(SQLModel, table=True):
     forecast_time: time
 
 class OHLC(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    symbol_date: str = Field(default=None, primary_key=True)
     symbol: str = Field(foreign_key="instrument.symbol")
     date: datetime = Field(default=None)
     open: float
@@ -45,6 +44,3 @@ class Order(SQLModel, table=True):
     avg_price: float  # in quote_currency, usually USD
     order_type: str
     filled: bool
-
-if __name__ == "__main__":
-    create_db()

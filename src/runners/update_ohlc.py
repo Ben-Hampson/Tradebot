@@ -1,0 +1,158 @@
+"""Runner to update OHLC data in database (assuming there's data in there already)."""
+import logging
+import os
+from typing import Optional
+
+import requests
+import numpy as np
+from sqlmodel import Session, select
+
+from src.models import OHLC, Instrument
+from src.database import engine, get_portfolio
+import datetime as dt
+
+log = logging.getLogger(__name__)
+
+def get_ohlc_data(inst: Instrument, end_date: dt.date, start_date: Optional[dt.date] = None):
+    """Get OHLC data for an Instrument between two dates.
+    
+    Inclusive of the start date and end date."""
+    if not inst.vehicle == "crypto":
+        return None
+
+    # Set API limit
+    if start_date:
+        date_diff = end_date - start_date
+        limit = date_diff.days
+        log.info(f"# of days to get close data for: {limit}")
+
+    # Request data from CryptoCompare API
+    # If no start, get data from the beginning
+    if start_date is None:
+        log.info("BTCUSDT table empty. Populating all available historic data.")
+
+        # The start date should be in the Instrument table
+        first_ts = requests.get(
+            "https://min-api.cryptocompare.com/data/blockchain/list",
+            {
+                "api_key": os.getenv("CC_API_KEY")
+            }
+        ).json()['Data']['BTC']['data_available_from']
+
+        first_date = dt.datetime.fromtimestamp(first_ts).date()
+
+        date_diff = end_date - first_date
+        limit = date_diff.days
+        log.info(f"# of days to get close data for: {limit}")
+
+    if limit > 2000:
+        # CryptoCompare has a limit of 2000 data points per request
+        all_data = []
+        while limit > 2000:
+            data = request_cryptocompare(inst, 2000, end_date)
+            all_data += data
+            limit -= 2000
+            end_date = data[0][0].date()
+    else:
+        all_data = request_cryptocompare(inst, limit, end_date)
+
+    return all_data
+        
+def request_cryptocompare(inst: Instrument, limit: int, end: dt.date) -> list:
+    """Get all OHLC data for {limit} number of days up to, but not including, the end date."""
+    data = requests.get(
+        "https://min-api.cryptocompare.com/data/v2/histoday", 
+        {
+            "fsym": inst.base_currency,
+            "tsym": inst.quote_currency,
+            "limit": str(limit),
+            "toTs": str(int(dt.datetime.timestamp(dt.datetime.combine(end, dt.time(0))))),
+            "api_key": os.getenv("CC_API_KEY")
+        }
+    ).json()
+
+    date_array_rev = []
+    open_array_rev = []
+    high_array_rev = []
+    low_array_rev = []
+    close_array_rev = []
+
+    # The API returns one more than you asked for, so ignore the first
+    for bar in reversed(data["Data"]["Data"][1:]):
+        date = dt.datetime.fromtimestamp(bar["time"])
+        open = float(bar["open"])
+        high = float(bar["high"])
+        low = float(bar["low"])
+        close = float(bar["close"])
+        log.info(f"{date} - {close}")
+
+        date_array_rev.append(date)  # Returns: First = latest, last = oldest.
+        open_array_rev.append(open)
+        high_array_rev.append(high)
+        low_array_rev.append(low)
+        close_array_rev.append(close)
+
+    # Reverse arrays so that first = oldest, last = latest
+    date_array = np.flip(np.array(date_array_rev))
+    open_array = np.flip(np.array(open_array_rev))
+    high_array = np.flip(np.array(high_array_rev))
+    low_array = np.flip(np.array(low_array_rev))
+    close_array = np.flip(np.array(close_array_rev))
+
+    return list(zip(date_array, open_array, high_array, low_array, close_array))
+
+def insert_ohlc_data(inst: Instrument, dates_ohlc: list):
+    """Insert OHLC data into 'ohlc' table."""
+    log.info(f"{inst.symbol} OHLC data: adding to database.")
+
+    records = []
+
+    for i in dates_ohlc:
+        record = OHLC(
+            symbol_date=inst.symbol + " " + str(i[0]),
+            symbol=inst.symbol, 
+            date=i[0],
+            open=i[1],
+            high=i[2],
+            low=i[3],
+            close=i[4]
+        )
+        records.append(record)
+
+    with Session(engine) as session:
+        session.add_all(records)
+        session.commit()
+    
+    log.info(f"{inst.symbol} OHLC data: added to database.")
+
+def update_ohlc_data(inst: Instrument):
+    with Session(engine) as session:
+        stmt = select(OHLC).where(OHLC.symbol==inst.symbol).order_by(OHLC.date.desc())
+        latest_record = session.exec(stmt).first()
+
+    yesterday = dt.date.today() - dt.timedelta(1)
+
+    if not latest_record:
+        data = get_ohlc_data(inst, dt.date.today(), None)
+        insert_ohlc_data(inst, data)
+    elif latest_record.date.date() != yesterday:
+        data = get_ohlc_data(inst, dt.date.today(), latest_record.date.date() + dt.timedelta(1))
+        insert_ohlc_data(inst, data)
+    else:
+        log.info(f"{inst.symbol} data is already up to date. No records added.")
+
+def main(symbol: Optional[str] = None):
+    """Populate OHLC data. If empty, start from the beginning. Otherwise, update data.
+    
+    Assumes all instruments are crypto."""
+    portfolio = get_portfolio()
+
+    if symbol:
+        instrument = next(x for x in portfolio if x.symbol == symbol)
+        update_ohlc_data(instrument)
+    else:
+        for instrument in portfolio:
+            update_ohlc_data(instrument)
+
+if __name__ == "__main__":
+    main()
