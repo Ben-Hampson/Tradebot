@@ -15,17 +15,18 @@ import datetime as dt
 log = logging.getLogger(__name__)
 
 class OHLCData:
-    """Class to get OHLC data from CryptoCompare and add it to the database.
+    """Class to get OHLC data from CryptoCompare and add it to the database."""
 
-    Args:
+    def __init__(self, symbol: str, end_date: Optional[dt.date] = None, start_date: Optional[dt.date] = None):
+        """Initialiser.
+        
+        Args:
         symbol: Instrument symbol e.g. BTCUSD.
         end_date: The latest date to get data for (inclusive?). Defaults to None. 
             If None, will get data up to the latest possible date.
         start_date: The earliest date to get data for (inclusive?). Defaults to None.
             If None, will get data from the earliest possible date.
-    """
-    def __init__(self, symbol: str, end_date: Optional[dt.date] = None, start_date: Optional[dt.date] = None):
-        """Initialiser."""
+        """
         self.symbol = symbol
         self.start_date = start_date
         self.end_date = end_date
