@@ -22,4 +22,5 @@ def main(symbol: Optional[str] = None):
             ohlc_data.update_ohlc_data()
 
 if __name__ == "__main__":
+    # TODO: Time Check, for when cronjob runs this script
     main()

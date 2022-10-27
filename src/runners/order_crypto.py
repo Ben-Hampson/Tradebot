@@ -5,7 +5,7 @@ import sys
 from textwrap import dedent
 
 from src import telegram_bot as tg
-from src.crypto import Instrument
+from src import crypto
 from src.database import get_portfolio
 from src.time_checker import time_check
 
@@ -29,7 +29,7 @@ def main():
     sub_weight = 1 / len(portfolio)
 
     portfolio = (
-        Instrument(
+        crypto.Instrument(  # Name 'Instrument' clashes with models.Instrument? OrderInstrument?
             row.symbol,
             row.exchange,
             row.base_currency,
@@ -43,6 +43,7 @@ def main():
         # Exchange is always open, no need to check.
         # TODO: argparse flag to disable time check.
         # Check if order_time was in the last 15 minutes.
+        # TODO: if os.getenv(ENVIRONMENT) == "TEST", ignore time-check.
         if time_check(instrument.symbol, "order"):
             pass
         else:
@@ -52,6 +53,7 @@ def main():
         instrument.calc_desired_position()
 
         # Send the order
+        # TODO: if os.getenv(ENVIRONMENT) != "LIVE", don't do this.
         if instrument.decision:
             instrument.order()
 

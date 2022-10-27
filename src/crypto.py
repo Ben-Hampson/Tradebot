@@ -7,8 +7,8 @@ import os
 from forex_python.converter import CurrencyCodes, CurrencyRates
 from sqlmodel import Session
 
-from src import database
 from src.database import engine
+from src.models import OHLC, EMACStrategy
 from src.dydx_exchange import dYdXExchange
 from src.tools import round_decimals_down
 
@@ -92,7 +92,8 @@ class Instrument:
     def latest_record(self) -> dict:
         """Get the latest record for the instrument from the database."""
         with Session(engine) as session:
-            stmt = select(database.BTCUSD).order_by(database.BTCUSD.date.desc())
+            # Join OHLC and EMACStrategy tables and get latest record.
+            stmt = select(OHLC.date, OHLC.close, EMACStrategy.forecast, EMACStrategy.instrument_risk).where(OHLC.symbol==self.symbol).join(EMACStrategy).order_by(OHLC.date.desc())
             latest_record = session.exec(stmt).first()
 
         return {

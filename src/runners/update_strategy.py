@@ -47,10 +47,10 @@ if __name__ == "__main__":
     # Check if forecast_time was in the last 15 minutes.
     # TODO: If empty, it should fill regardless of time_check().
     for instrument in get_portfolio():
-        # if time_check(instrument.symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
-        #     pass
-        # else:
-        #     continue
+        if time_check(instrument.symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
+            pass
+        else:
+            continue
 
         empty, up_to_date, latestDate = check_table_status(instrument.symbol)
 

@@ -27,5 +27,6 @@ def populate_instruments():
         session.commit()
 
 if __name__ == "__main__":
+    # TODO: Logs
     create_db_and_tables()
-    # populate_instruments() # Error: Not unique instrument.
+    populate_instruments()
