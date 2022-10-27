@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from src.database import get_portfolio
+from src.database import get_portfolio, check_table_status
 from src import telegram_bot as tg
 from src.time_checker import time_check
 from src.runners import update_ohlc
@@ -16,7 +16,16 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
-def main(symbol: Optional[str] = None):
+def update_one(symbol: str):
+    """Run EMAC Strategy Updater for one symbol.
+
+    Args:
+        symbol: Ticker symbol.
+    """
+    emac_strat = EMACStrategyData(symbol)
+    emac_strat.update_strat_data()
+
+def update_one_or_all(symbol: Optional[str] = None):
     """Populate EMAC strategy data in database.
 
     Calculates all strategic data since the start of OHLC data.
@@ -25,46 +34,34 @@ def main(symbol: Optional[str] = None):
         symbol: Ticker symbol. If None, calculate and update for all symbols. 
             Defaults to None.
     """
-    portfolio = get_portfolio()
-
     if symbol:
-        emac_strat = EMACStrategyData(symbol)
-        emac_strat.update_strat_data()
+        update_one(symbol)
     else:
+        portfolio = get_portfolio()
         for instrument in portfolio:
-            emac_strat = EMACStrategy(instrument.symbol)
-            emac_strat.update_strat_data()
+            update_one(instrument.symbol)
 
 
 if __name__ == "__main__":
     """Populate the EMACStrategy table from scratch or update it, depending on its status."""    
+    # Check if forecast_time was in the last 15 minutes.
+    # TODO: If empty, it should fill regardless of time_check().
     for instrument in get_portfolio():
-        main(instrument.symbol)
-    #     symbol = sub.symbol
+        # if time_check(instrument.symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
+        #     pass
+        # else:
+        #     continue
 
-    #     # Check if forecast_time was in the last 15 minutes.
-    #     # TODO: If empty, it should fill regardless of time_check().
-    #     if time_check(symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
-    #         pass
-    #     else:
-    #         continue
+        empty, up_to_date, latestDate = check_table_status(instrument.symbol)
 
-    #     empty, up_to_date, latestDate = check_table_status(symbol)
+        tg_message = f"*Database Update: {instrument.symbol}*\nEmpty: {empty}\nUp To Date: {up_to_date}\nLatest Record: {latestDate}"
 
-    #     tg_message = f"*Database Update: {symbol}*\nEmpty: {empty}\nUp To Date: {up_to_date}\nLatest Record: {latestDate}"
+        if not up_to_date:
+            update_one(instrument.symbol)
+            # TODO: Fix Telegram Message.
+            # TODO: Add Instrument Risk and Forecast.
+            # tg_message += f"\nRecords Added.\nLatest Date Added: {dates_closes[-1][0]}\nLatest Close Added: {dates_closes[-1][1]}"
 
-    #     if up_to_date == False:
-    #         log.info(f"{symbol}: No data for yesterday. Attempting update.")
+        tg.outbound(tg_message)
 
-    #         update_ohlc.main(symbol)  # TODO: Not needed? update_ohlc should do this on its own cronjob.
-
-    #         calculate_emas(symbol)
-    #         combined_forecast(symbol)
-    #         instrument_risk(symbol)
-
-    #         # Add info to Telegram Message
-    #         # tg_message += f"\nRecords Added.\nLatest Date Added: {dates_closes[-1][0]}\nLatest Close Added: {dates_closes[-1][1]}"
-
-    #     tg.outbound(tg_message)
-
-    # log.info("Finished database.py")
+    log.info("Finished updating strategy.")

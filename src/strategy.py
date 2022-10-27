@@ -4,6 +4,7 @@ import logging
 from typing import Tuple
 
 from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
 import tulipy as ti
 import numpy as np
 
@@ -18,6 +19,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 class EMACStrategyData:
+    # TODO: Rename: EMACStrategyUpdater
     """EMA Crossover strategy."""
 
     def __init__(self, symbol: str):
@@ -162,12 +164,15 @@ class EMACStrategyData:
 
         input = list(
             zip(
+                date_data,
                 ema16_array,
                 ema32_array,
                 ema64_array,
                 ema128_array,
                 ema256_array,
-                date_data,
+                raw16_64,
+                raw32_128,
+                raw64_256,
             )
         )
         log.info(f"Input Length: {len(input)}")
@@ -178,19 +183,26 @@ class EMACStrategyData:
         with Session(engine) as session:
             for i in input:
                 record = EMACStrategy(
+                    symbol_date=f"{self.symbol} {i[0]}",
                     symbol=self.symbol,
-                    date=i[5],
-                    ema_16 = i[0],
-                    ema_32 = i[1],
-                    ema_64 = i[2],
-                    ema_128 = i[3],
-                    ema_256 = i[4],
+                    date=i[0],
+                    ema_16 = i[1],
+                    ema_32 = i[2],
+                    ema_64 = i[3],
+                    ema_128 = i[4],
+                    ema_256 = i[5],
+                    raw16_64 = i[6],
+                    raw32_128 = i[7],
+                    raw64_256 = i[8],
                 )
                 records.append(record)
 
         with Session(engine) as session:
-            session.add_all(records)        
-            session.commit()
+            session.add_all(records)
+            try:
+                session.commit()
+            except IntegrityError:
+                log.warn("Records already exist.")
 
         log.info(f"--- {self.symbol}: EMAs updated ---")
         log.info(f"Records Updated: {len(records)}")
@@ -251,6 +263,7 @@ class EMACStrategyData:
                 stmt = select(EMACStrategy).where(EMACStrategy.symbol==self.symbol).where(EMACStrategy.date==i[0])
                 existing_record = session.exec(stmt).one()
                 existing_record.forecast = i[1]
+                records.append(i)
             session.commit()
 
         log.info(f"--- {self.symbol}: Forecast updated ---")
@@ -263,7 +276,7 @@ class EMACStrategyData:
         log.info(f"--- {self.symbol}: Updating Instrument Risk ---")
 
         with Session(engine) as session:
-            stmt = select(EMACStrategy).filter(EMACStrategy.symbol==self.symbol).order_by(EMACStrategy.date.asc())
+            stmt = select(OHLC).filter(OHLC.symbol==self.symbol).order_by(OHLC.date.asc())
             rows = session.exec(stmt).all()
 
         date_data = [row.date for row in rows]
@@ -282,9 +295,10 @@ class EMACStrategyData:
 
         with Session(engine) as session:
             for i in input:
-                stmt = select(EMACStrategy).where(EMACStrategy.symbol==self.symbol).where(EMACStrategy.date==i[1])
+                stmt = select(EMACStrategy).where(EMACStrategy.symbol==self.symbol).where(EMACStrategy.date==i[0])
                 existing_record = session.exec(stmt).one()
                 existing_record.instrument_risk = i[1]
+                records.append(i)
             session.commit()
 
         log.info(f"--- {self.symbol}: Instrument Risk updated ---")

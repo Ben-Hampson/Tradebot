@@ -25,6 +25,8 @@ def run(symbol: str):
         sub_stmt = select(Instrument).where(Instrument.symbol == symbol)
         sub = session.exec(sub_stmt).one()
 
+    # TODO: Replace use of check_table_status().
+    # Then delete the function, and model BTCUSD.
     empty, up_to_date, latest_date = db.check_table_status(sub.symbol)
 
     if up_to_date is False:

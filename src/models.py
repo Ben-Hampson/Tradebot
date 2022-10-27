@@ -24,8 +24,7 @@ class OHLC(SQLModel, table=True):
     close: float
 
 class EMACStrategy(SQLModel, table=True):
-    # TODO: symbol_date: str = Field(default=None, primary_key=True)
-    id: Optional[int] = Field(default=None, primary_key=True)
+    symbol_date: str = Field(default=None, primary_key=True)
     symbol: str = Field(foreign_key="instrument.symbol")
     date: datetime
     ema_16: float
@@ -33,11 +32,14 @@ class EMACStrategy(SQLModel, table=True):
     ema_64: float
     ema_128: float
     ema_256: float
+    raw16_64: float = Field(nullable=True)
+    raw32_128: float = Field(nullable=True)
+    raw64_256: float = Field(nullable=True)
     forecast: float = Field(nullable=True)
     instrument_risk: float = Field(nullable=True)
 
 class Order(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    symbol_date: str = Field(default=None, primary_key=True)
     symbol: str = Field(foreign_key="instrument.symbol")
     date: datetime
     side: str
