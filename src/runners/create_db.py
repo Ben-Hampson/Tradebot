@@ -6,6 +6,14 @@ from src.database import engine, create_db_and_tables
 from src.models import Instrument
 
 from sqlmodel import Session
+from sqlite3 import IntegrityError
+import logging
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+
+log = logging.getLogger(__name__)
 
 def populate_instruments():
     """Populate 'instruments' table."""
@@ -23,8 +31,14 @@ def populate_instruments():
     ]
     
     with Session(engine) as session:
-        session.add_all(instruments)
-        session.commit()
+        for inst in instruments:
+            session.add(inst)
+            try:
+                session.commit()
+                log.info(f"{inst.symbol}: Added to the Instruments table.")
+            except Exception:
+                log.info(f"{inst.symbol}: Already in the Instruments table.")
+                continue
 
 if __name__ == "__main__":
     # TODO: Logs

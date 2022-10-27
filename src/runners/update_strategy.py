@@ -2,11 +2,12 @@
 
 from typing import Optional
 
-from src.database import get_portfolio, check_table_status
+from src.database import get_portfolio
 from src import telegram_bot as tg
 from src.time_checker import time_check
 from src.runners import update_ohlc
 from src.strategy import EMACStrategyData
+from src import db_utils
 
 import logging
 
@@ -47,21 +48,24 @@ if __name__ == "__main__":
     # Check if forecast_time was in the last 15 minutes.
     # TODO: If empty, it should fill regardless of time_check().
     for instrument in get_portfolio():
-        if time_check(instrument.symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
-            pass
-        else:
-            continue
+        # if time_check(instrument.symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
+        #     pass
+        # else:
+        #     continue
 
-        empty, up_to_date, latestDate = check_table_status(instrument.symbol)
+        latest_record = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
 
-        tg_message = f"*Database Update: {instrument.symbol}*\nEmpty: {empty}\nUp To Date: {up_to_date}\nLatest Record: {latestDate}"
+        # tg_message = f"*Database Update: {instrument.symbol}*\nEmpty: {empty}\nUp To Date: {up_to_date}\nLatest Record: {latestDate}"
 
-        if not up_to_date:
+        if not latest_record.forecast or not latest_record.instrument_risk:
             update_one(instrument.symbol)
+            log.info(f"{instrument.symbol}: Strategy updated.")
             # TODO: Fix Telegram Message.
             # TODO: Add Instrument Risk and Forecast.
             # tg_message += f"\nRecords Added.\nLatest Date Added: {dates_closes[-1][0]}\nLatest Close Added: {dates_closes[-1][1]}"
+            # tg.outbound(tg_message)
+        else:
+            log.info(f"{instrument.symbol}: Strategy already up to date.")
 
-        tg.outbound(tg_message)
 
     log.info("Finished updating strategy.")

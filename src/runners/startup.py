@@ -5,11 +5,14 @@ import logging
 from src import database as db
 from src import telegram_bot as tg
 from src import strategy
-from src.database import engine, get_portfolio
+from src.database import engine, get_portfolio, get_instrument
 from src.models import Instrument
 from src.runners import update_ohlc
+from src.runners.create_db import create_db_and_tables, populate_instruments
+from src.db_utils import get_latest_ohlc_strat_record
 
 from sqlmodel import select, Session
+import datetime as dt
 
 
 logging.basicConfig(
@@ -21,29 +24,31 @@ log = logging.getLogger(__name__)
 
 def run(symbol: str):
     """Populate the database from scratch or update it."""
-    with Session(engine) as session:
-        sub_stmt = select(Instrument).where(Instrument.symbol == symbol)
-        sub = session.exec(sub_stmt).one()
+    latest_record = get_latest_ohlc_strat_record(symbol)
 
-    # TODO: Replace use of check_table_status().
-    # Then delete the function, and model BTCUSD.
-    empty, up_to_date, latest_date = db.check_table_status(sub.symbol)
+    yesterday = dt.date.today() - dt.timedelta(1)
 
-    if up_to_date is False:
-        log.info(f"{sub.symbol}: No data for yesterday. Attempting update.")
+    if not latest_record or latest_record.date.date() != yesterday:
+        log.info(f"{symbol}: No data for yesterday. Attempting update.")
 
         # Assumes all assets are crypto
-        update_ohlc.main(sub.symbol)
+        update_ohlc.main(symbol)
 
-        strategy.calculate_emas(sub.symbol)
-        strategy.combined_forecast(sub.symbol)
-        strategy.instrument_risk(sub.symbol)
+        strategy.calculate_emas(symbol)
+        strategy.combined_forecast(symbol)
+        strategy.instrument_risk(symbol)
+    else:
+        log.info(f"{symbol}: Already up to date.")
 
 
 if __name__ == "__main__":
     tg.outbound("Server starting up.")
 
-    for subsystem in get_portfolio():
-        run(subsystem.symbol)
+    # Create database if it doesn't already exist
+    create_db_and_tables()
+    populate_instruments()
+
+    for instrument in get_portfolio():
+        run(instrument.symbol)
 
     log.info("Finished startup.py")
