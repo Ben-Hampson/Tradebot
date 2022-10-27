@@ -2,7 +2,7 @@
 import logging
 from typing import Optional
 
-from src.database import get_portfolio
+from src.db_utils import get_portfolio
 from src.ohlc import OHLCData
 
 log = logging.getLogger(__name__)

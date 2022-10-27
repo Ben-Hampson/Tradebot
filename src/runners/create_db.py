@@ -2,7 +2,7 @@
 """Create database and tables, and populate them from scratch."""
 import datetime as dt
 
-from src.database import engine, create_db_and_tables
+from src.db_utils import engine, create_db_and_tables
 from src.models import Instrument
 
 from sqlmodel import Session

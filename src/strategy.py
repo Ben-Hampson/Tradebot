@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 import tulipy as ti
 import numpy as np
 
-from src.database import engine, get_instrument
+from src.db_utils import engine, get_instrument
 from src.models import OHLC, EMACStrategy
 
 

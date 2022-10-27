@@ -2,10 +2,9 @@
 
 import logging
 
-from src import database as db
 from src import telegram_bot as tg
 from src import strategy
-from src.database import engine, get_portfolio, get_instrument
+from src.db_utils import engine, get_portfolio, get_instrument
 from src.models import Instrument
 from src.runners import update_ohlc
 from src.runners.create_db import create_db_and_tables, populate_instruments

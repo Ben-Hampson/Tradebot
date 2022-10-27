@@ -6,7 +6,7 @@ from textwrap import dedent
 
 from src import telegram_bot as tg
 from src import crypto
-from src.database import get_portfolio
+from src.db_utils import get_portfolio
 from src.time_checker import time_check
 
 logging.basicConfig(

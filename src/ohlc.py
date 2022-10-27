@@ -9,7 +9,7 @@ import numpy as np
 from sqlmodel import Session, select
 
 from src.models import OHLC
-from src.database import engine, get_instrument
+from src.db_utils import engine, get_instrument
 import datetime as dt
 
 log = logging.getLogger(__name__)

@@ -7,7 +7,7 @@ import exchange_calendars as ecals
 import pandas as pd
 import pytz
 
-from src.database import engine, Instrument
+from src.db_utils import engine, Instrument
 
 from sqlmodel import select, Session
 

@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from src.database import get_portfolio
+from src.db_utils import get_portfolio
 from src import telegram_bot as tg
 from src.time_checker import time_check
 from src.runners import update_ohlc
@@ -48,10 +48,10 @@ if __name__ == "__main__":
     # Check if forecast_time was in the last 15 minutes.
     # TODO: If empty, it should fill regardless of time_check().
     for instrument in get_portfolio():
-        # if time_check(instrument.symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
-        #     pass
-        # else:
-        #     continue
+        if time_check(instrument.symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
+            pass
+        else:
+            continue
 
         latest_record = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
 
