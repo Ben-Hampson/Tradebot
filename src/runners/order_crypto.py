@@ -41,7 +41,6 @@ def main():
 
     for instrument in portfolio:
         # Exchange is always open, no need to check.
-        # TODO: argparse flag to disable time check.
         # Check if order_time was in the last 15 minutes.
         # TODO: if os.getenv(ENVIRONMENT) == "TEST", ignore time-check.
         if time_check(instrument.symbol, "order"):
@@ -74,7 +73,6 @@ def main():
         log.info(f"{instrument.symbol}: Complete")
 
     log.info("Finished.")
-
 
 if __name__ == "__main__":
     main()

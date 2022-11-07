@@ -18,8 +18,7 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
-class EMACStrategyData:
-    # TODO: Rename: EMACStrategyUpdater
+class EMACStrategyUpdater:
     """EMA Crossover strategy."""
 
     def __init__(self, symbol: str):

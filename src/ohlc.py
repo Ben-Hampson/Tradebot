@@ -14,8 +14,7 @@ import datetime as dt
 
 log = logging.getLogger(__name__)
 
-class OHLCData:
-    # TODO: Rename to OHLCDataUpdater
+class OHLCUpdater:
     """Class to get OHLC data from CryptoCompare and add it to the database."""
 
     def __init__(self, symbol: str, end_date: Optional[dt.date] = None, start_date: Optional[dt.date] = None):
