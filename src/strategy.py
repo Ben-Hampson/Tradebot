@@ -3,20 +3,20 @@
 import logging
 from typing import Tuple
 
-from sqlmodel import Session, select
-from sqlalchemy.exc import IntegrityError
-import tulipy as ti
 import numpy as np
+import tulipy as ti
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session, select
 
 from src.db_utils import engine, get_instrument
 from src.models import OHLC, EMACStrategy
-
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 log = logging.getLogger(__name__)
+
 
 class EMACStrategyUpdater:
     """EMA Crossover strategy."""
@@ -48,8 +48,8 @@ class EMACStrategyUpdater:
 
         return ema_array
 
-
-    def raw_forecast(self,
+    def raw_forecast(
+        self,
         fast_ema_array: list,
         slow_ema_array: list,
         slow_ema_length: int,
@@ -112,7 +112,9 @@ class EMACStrategyUpdater:
             fc_avg.append(current_avg)
         fc_avg = np.array(fc_avg)
 
-        fc_scalar = 10 / fc_avg  # RuntimeWarning: divide by zero encountered in true_divide
+        fc_scalar = (
+            10 / fc_avg
+        )  # RuntimeWarning: divide by zero encountered in true_divide
         fc_scaled = (
             raw_forecast * fc_scalar
         )  # RuntimeWarning: invalid value encountered in multiply
@@ -126,7 +128,11 @@ class EMACStrategyUpdater:
         log.info(f"--- {self.symbol}: Updating EMAs ---")
 
         with Session(engine) as session:
-            stmt = select(OHLC).filter(OHLC.symbol==self.symbol).order_by(OHLC.date.asc())
+            stmt = (
+                select(OHLC)
+                .filter(OHLC.symbol == self.symbol)
+                .order_by(OHLC.date.asc())
+            )
             rows = session.exec(stmt).all()
 
         close_data = [row.close for row in rows]
@@ -185,14 +191,14 @@ class EMACStrategyUpdater:
                     symbol_date=f"{self.symbol} {i[0]}",
                     symbol=self.symbol,
                     date=i[0],
-                    ema_16 = i[1],
-                    ema_32 = i[2],
-                    ema_64 = i[3],
-                    ema_128 = i[4],
-                    ema_256 = i[5],
-                    raw16_64 = i[6],
-                    raw32_128 = i[7],
-                    raw64_256 = i[8],
+                    ema_16=i[1],
+                    ema_32=i[2],
+                    ema_64=i[3],
+                    ema_128=i[4],
+                    ema_256=i[5],
+                    raw16_64=i[6],
+                    raw32_128=i[7],
+                    raw64_256=i[8],
                 )
                 records.append(record)
 
@@ -211,14 +217,24 @@ class EMACStrategyUpdater:
         log.info(f"--- {self.symbol}: Updating Forecast ---")
 
         with Session(engine) as session:
-            stmt = select(EMACStrategy).filter(EMACStrategy.symbol==self.symbol).order_by(EMACStrategy.date.asc())
+            stmt = (
+                select(EMACStrategy)
+                .filter(EMACStrategy.symbol == self.symbol)
+                .order_by(EMACStrategy.date.asc())
+            )
             rows = session.exec(stmt).all()
 
         date_data = [row.date for row in rows]
 
-        fc1_avg, fc1_scalar, fc1_scaled, fc1 = self.scale_and_cap_raw_forecast(rows, 16, 64)
-        fc2_avg, fc2_scalar, fc2_scaled, fc2 = self.scale_and_cap_raw_forecast(rows, 32, 128)
-        fc3_avg, fc3_scalar, fc3_scaled, fc3 = self.scale_and_cap_raw_forecast(rows, 64, 256)
+        fc1_avg, fc1_scalar, fc1_scaled, fc1 = self.scale_and_cap_raw_forecast(
+            rows, 16, 64
+        )
+        fc2_avg, fc2_scalar, fc2_scaled, fc2 = self.scale_and_cap_raw_forecast(
+            rows, 32, 128
+        )
+        fc3_avg, fc3_scalar, fc3_scaled, fc3 = self.scale_and_cap_raw_forecast(
+            rows, 64, 256
+        )
 
         # Left pad the lists to make them equal length
         padding = len(date_data) - len(fc1)
@@ -259,7 +275,11 @@ class EMACStrategyUpdater:
 
         with Session(engine) as session:
             for i in input:
-                stmt = select(EMACStrategy).where(EMACStrategy.symbol==self.symbol).where(EMACStrategy.date==i[0])
+                stmt = (
+                    select(EMACStrategy)
+                    .where(EMACStrategy.symbol == self.symbol)
+                    .where(EMACStrategy.date == i[0])
+                )
                 existing_record = session.exec(stmt).one()
                 existing_record.forecast = i[1]
                 records.append(i)
@@ -270,12 +290,16 @@ class EMACStrategyUpdater:
 
     def instrument_risk(self) -> None:
         """Find the instrument risk / price volatility of a symbol and add to EMACStrategy table.
-        
+
         In percent. 0.5 = 50%."""
         log.info(f"--- {self.symbol}: Updating Instrument Risk ---")
 
         with Session(engine) as session:
-            stmt = select(OHLC).filter(OHLC.symbol==self.symbol).order_by(OHLC.date.asc())
+            stmt = (
+                select(OHLC)
+                .filter(OHLC.symbol == self.symbol)
+                .order_by(OHLC.date.asc())
+            )
             rows = session.exec(stmt).all()
 
         date_data = [row.date for row in rows]
@@ -294,7 +318,11 @@ class EMACStrategyUpdater:
 
         with Session(engine) as session:
             for i in input:
-                stmt = select(EMACStrategy).where(EMACStrategy.symbol==self.symbol).where(EMACStrategy.date==i[0])
+                stmt = (
+                    select(EMACStrategy)
+                    .where(EMACStrategy.symbol == self.symbol)
+                    .where(EMACStrategy.date == i[0])
+                )
                 existing_record = session.exec(stmt).one()
                 existing_record.instrument_risk = i[1]
                 records.append(i)

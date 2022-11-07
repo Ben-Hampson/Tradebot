@@ -1,21 +1,21 @@
 """Run strategy calculations and add them to the database."""
 
-from typing import Optional
 import datetime as dt
-
-from src.db_utils import get_portfolio
-from src import telegram_bot as tg
-from src.time_checker import time_check
-from src.strategy import EMACStrategyUpdater
-from src import db_utils
-
 import logging
+from typing import Optional
+
+from src import db_utils
+from src import telegram_bot as tg
+from src.db_utils import get_portfolio
+from src.strategy import EMACStrategyUpdater
+from src.time_checker import time_check
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 log = logging.getLogger(__name__)
+
 
 def update_one(symbol: str):
     """Run EMAC Strategy Updater for one symbol.
@@ -26,13 +26,14 @@ def update_one(symbol: str):
     emac_strat = EMACStrategyUpdater(symbol)
     emac_strat.update_strat_data()
 
+
 def update_one_or_all(symbol: Optional[str] = None):
     """Populate EMAC strategy data in database.
 
     Calculates all strategic data since the start of OHLC data.
 
     Args:
-        symbol: Ticker symbol. If None, calculate and update for all symbols. 
+        symbol: Ticker symbol. If None, calculate and update for all symbols.
             Defaults to None.
     """
     if symbol:
@@ -42,11 +43,14 @@ def update_one_or_all(symbol: Optional[str] = None):
         for instrument in portfolio:
             update_one(instrument.symbol)
 
+
 def main():
-    """Populate the EMACStrategy table from scratch or update it, depending on its status."""    
+    """Populate the EMACStrategy table from scratch or update it, depending on its status."""
     for instrument in get_portfolio():
         # Check if forecast_time was in the last 15 minutes.
-        if time_check(instrument.symbol, "forecast"): # TODO: os.getenv() If dev, ignore time_check.
+        if time_check(
+            instrument.symbol, "forecast"
+        ):  # TODO: os.getenv() If dev, ignore time_check.
             pass
         else:
             continue
@@ -62,8 +66,8 @@ def main():
         else:
             log.info(f"{instrument.symbol}: Strategy already up to date.")
 
-
     log.info("Finished updating strategy.")
+
 
 if __name__ == "__main__":
     main()

@@ -1,28 +1,34 @@
 """Logic for getting OHLC and adding it to the database."""
 
+import datetime as dt
 import logging
 import os
 from typing import Optional
 
-import requests
 import numpy as np
+import requests
 from sqlmodel import Session, select
 
-from src.models import OHLC
 from src.db_utils import engine, get_instrument
-import datetime as dt
+from src.models import OHLC
 
 log = logging.getLogger(__name__)
+
 
 class OHLCUpdater:
     """Class to get OHLC data from CryptoCompare and add it to the database."""
 
-    def __init__(self, symbol: str, end_date: Optional[dt.date] = None, start_date: Optional[dt.date] = None):
+    def __init__(
+        self,
+        symbol: str,
+        end_date: Optional[dt.date] = None,
+        start_date: Optional[dt.date] = None,
+    ):
         """Initialiser.
-        
+
         Args:
         symbol: Instrument symbol e.g. BTCUSD.
-        end_date: The latest date to get data for (inclusive?). Defaults to None. 
+        end_date: The latest date to get data for (inclusive?). Defaults to None.
             If None, will get data up to the latest possible date.
         start_date: The earliest date to get data for (inclusive?). Defaults to None.
             If None, will get data from the earliest possible date.
@@ -35,7 +41,11 @@ class OHLCUpdater:
     def update_ohlc_data(self):
         """Main runner. Bring OHLC data in OHLC table up to date."""
         with Session(engine) as session:
-            stmt = select(OHLC).where(OHLC.symbol==self.symbol).order_by(OHLC.date.desc())
+            stmt = (
+                select(OHLC)
+                .where(OHLC.symbol == self.symbol)
+                .order_by(OHLC.date.desc())
+            )
             latest_ohlc = session.exec(stmt).first()
 
         yesterday = dt.date.today() - dt.timedelta(1)
@@ -44,14 +54,16 @@ class OHLCUpdater:
             self.get_ohlc_data(dt.date.today(), None)
             self.insert_ohlc_data()
         elif latest_ohlc.date.date() != yesterday:
-            self.get_ohlc_data(dt.date.today(), latest_ohlc.date.date() + dt.timedelta(1))
+            self.get_ohlc_data(
+                dt.date.today(), latest_ohlc.date.date() + dt.timedelta(1)
+            )
             self.insert_ohlc_data()
         else:
             log.info(f"{self.symbol} data is already up to date. No records added.")
 
     def get_ohlc_data(self, end_date: dt.date, start_date: Optional[dt.date]):
         """Get OHLC data for an Instrument between two dates.
-        
+
         Inclusive of the start date and end date."""
         if not self.instrument.vehicle == "crypto":
             return None
@@ -70,10 +82,8 @@ class OHLCUpdater:
             # The start date should be in the Instrument table
             first_ts = requests.get(
                 "https://min-api.cryptocompare.com/data/blockchain/list",
-                {
-                    "api_key": os.getenv("CC_API_KEY")
-                }
-            ).json()['Data']['BTC']['data_available_from']
+                {"api_key": os.getenv("CC_API_KEY")},
+            ).json()["Data"]["BTC"]["data_available_from"]
 
             first_date = dt.datetime.fromtimestamp(first_ts).date()
 
@@ -85,7 +95,7 @@ class OHLCUpdater:
             # CryptoCompare has a limit of 2000 data points per request
             all_data = []
             to_date = end_date
-            
+
             while limit > 2000:
                 data = self.request_cryptocompare(2000, to_date)
                 all_data += data
@@ -95,18 +105,20 @@ class OHLCUpdater:
             all_data = self.request_cryptocompare(limit, end_date)
 
         self.data = all_data
-            
+
     def request_cryptocompare(self, limit: int, to_date: dt.date) -> list:
         """Get all OHLC data for {limit} number of days up to, but not including, the end date."""
         data = requests.get(
-            "https://min-api.cryptocompare.com/data/v2/histoday", 
+            "https://min-api.cryptocompare.com/data/v2/histoday",
             {
                 "fsym": self.instrument.base_currency,
                 "tsym": self.instrument.quote_currency,
                 "limit": str(limit),
-                "toTs": str(int(dt.datetime.timestamp(dt.datetime.combine(to_date, dt.time(0))))),
-                "api_key": os.getenv("CC_API_KEY")
-            }
+                "toTs": str(
+                    int(dt.datetime.timestamp(dt.datetime.combine(to_date, dt.time(0))))
+                ),
+                "api_key": os.getenv("CC_API_KEY"),
+            },
         ).json()
 
         date_array_rev = []
@@ -148,17 +160,17 @@ class OHLCUpdater:
         for i in self.data:
             record = OHLC(
                 symbol_date=f"{self.symbol} {i[0]}",
-                symbol=self.symbol, 
+                symbol=self.symbol,
                 date=i[0],
                 open=i[1],
                 high=i[2],
                 low=i[3],
-                close=i[4]
+                close=i[4],
             )
             records.append(record)
 
         with Session(engine) as session:
             session.add_all(records)
             session.commit()
-        
+
         log.info(f"{self.symbol} OHLC data: added to database.")

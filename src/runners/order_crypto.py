@@ -4,8 +4,8 @@ import os
 import sys
 from textwrap import dedent
 
-from src import telegram_bot as tg
 from src import crypto
+from src import telegram_bot as tg
 from src.db_utils import get_portfolio
 from src.time_checker import time_check
 
@@ -73,6 +73,7 @@ def main():
         log.info(f"{instrument.symbol}: Complete")
 
     log.info("Finished.")
+
 
 if __name__ == "__main__":
     main()

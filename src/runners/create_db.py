@@ -1,19 +1,19 @@
-
 """Create database and tables, and populate them from scratch."""
 import datetime as dt
-
-from src.db_utils import engine, create_db_and_tables
-from src.models import Instrument
-
-from sqlmodel import Session
-from sqlalchemy.exc import IntegrityError
 import logging
+
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session
+
+from src.db_utils import create_db_and_tables, engine
+from src.models import Instrument
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 log = logging.getLogger(__name__)
+
 
 def populate_instruments():
     """Populate 'instruments' table."""
@@ -29,7 +29,7 @@ def populate_instruments():
             forecast_time=dt.time(6, 0),
         )
     ]
-    
+
     with Session(engine) as session:
         for inst in instruments:
             session.add(inst)
@@ -38,6 +38,7 @@ def populate_instruments():
                 log.info(f"{inst.symbol}: Added to the Instruments table.")
             except IntegrityError:
                 log.info(f"{inst.symbol}: Already in the Instruments table.")
+
 
 if __name__ == "__main__":
     log.info("Creating database and tables.")

@@ -1,18 +1,21 @@
 """Script to run on server startup. Updates database with closes and forecasts."""
 
+import datetime as dt
 import logging
 
-from src import telegram_bot as tg
+from sqlmodel import Session, select
+
 from src import strategy
-from src.db_utils import engine, get_portfolio, get_instrument
+from src import telegram_bot as tg
+from src.db_utils import (
+    engine,
+    get_instrument,
+    get_latest_ohlc_strat_record,
+    get_portfolio,
+)
 from src.models import Instrument
 from src.runners import update_ohlc
 from src.runners.create_db import create_db_and_tables, populate_instruments
-from src.db_utils import get_latest_ohlc_strat_record
-
-from sqlmodel import select, Session
-import datetime as dt
-
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

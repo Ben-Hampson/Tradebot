@@ -1,15 +1,14 @@
 import logging
-from functools import cached_property
-from sqlmodel import select
-from typing import Union
 import os
+from functools import cached_property
+from typing import Union
 
 from forex_python.converter import CurrencyCodes, CurrencyRates
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from src.db_utils import engine
-from src.models import OHLC, EMACStrategy
 from src.dydx_exchange import dYdXExchange
+from src.models import OHLC, EMACStrategy
 from src.tools import round_decimals_down
 
 logging.basicConfig(
@@ -93,7 +92,17 @@ class Instrument:
         """Get the latest record for the instrument from the database."""
         with Session(engine) as session:
             # Join OHLC and EMACStrategy tables and get latest record.
-            stmt = select(OHLC.date, OHLC.close, EMACStrategy.forecast, EMACStrategy.instrument_risk).where(OHLC.symbol==self.symbol).join(EMACStrategy).order_by(OHLC.date.desc())
+            stmt = (
+                select(
+                    OHLC.date,
+                    OHLC.close,
+                    EMACStrategy.forecast,
+                    EMACStrategy.instrument_risk,
+                )
+                .where(OHLC.symbol == self.symbol)
+                .join(EMACStrategy)
+                .order_by(OHLC.date.desc())
+            )
             latest_record = session.exec(stmt).first()
 
         return {

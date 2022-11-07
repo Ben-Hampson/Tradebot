@@ -1,8 +1,10 @@
 """Models for database."""
 
-from sqlmodel import Field, SQLModel
-from datetime import time, datetime
+from datetime import datetime, time
 from typing import Optional
+
+from sqlmodel import Field, SQLModel
+
 
 class Instrument(SQLModel, table=True):
     symbol: str = Field(default=None, primary_key=True)
@@ -14,6 +16,7 @@ class Instrument(SQLModel, table=True):
     order_time: time
     forecast_time: time
 
+
 class OHLC(SQLModel, table=True):
     symbol_date: str = Field(default=None, primary_key=True)
     symbol: str = Field(foreign_key="instrument.symbol")
@@ -23,8 +26,11 @@ class OHLC(SQLModel, table=True):
     low: float
     close: float
 
+
 class EMACStrategy(SQLModel, table=True):
-    symbol_date: str = Field(foreign_key="ohlc.symbol_date", default=None, primary_key=True)
+    symbol_date: str = Field(
+        foreign_key="ohlc.symbol_date", default=None, primary_key=True
+    )
     symbol: str = Field(foreign_key="instrument.symbol")
     date: datetime
     ema_16: float
@@ -38,8 +44,11 @@ class EMACStrategy(SQLModel, table=True):
     forecast: float = Field(nullable=True)
     instrument_risk: float = Field(nullable=True)
 
+
 class Order(SQLModel, table=True):
-    symbol_date: str = Field(foreign_key="ohlc.symbol_date", default=None, primary_key=True)
+    symbol_date: str = Field(
+        foreign_key="ohlc.symbol_date", default=None, primary_key=True
+    )
     symbol: str = Field(foreign_key="instrument.symbol")
     date: datetime
     side: str

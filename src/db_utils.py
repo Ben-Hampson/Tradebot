@@ -3,7 +3,8 @@
 import logging
 from pathlib import Path
 
-from sqlmodel import select, Session, create_engine, SQLModel
+from sqlmodel import Session, SQLModel, create_engine, select
+
 from src.models import OHLC, EMACStrategy, Instrument
 
 logging.basicConfig(
@@ -17,11 +18,13 @@ APP_DB = path.joinpath("data/data.db")  # TODO: Base this on an env variable.
 
 engine = create_engine(f"sqlite:///{APP_DB}")
 
+
 def create_db_and_tables():
     """Creates database with tables based on models."""
 
     engine_test = create_engine(f"sqlite:///{APP_DB}")
     SQLModel.metadata.create_all(engine_test)
+
 
 def get_portfolio():
     """Get all instruments from 'portfolio' table."""
@@ -29,6 +32,7 @@ def get_portfolio():
         statement = select(Instrument)
         results = session.exec(statement).all()
     return results
+
 
 def get_instrument(symbol: str) -> Instrument:
     """Get a single Instrument from the portfolio.
@@ -41,6 +45,7 @@ def get_instrument(symbol: str) -> Instrument:
     """
     return next(x for x in get_portfolio() if x.symbol == symbol)
 
+
 def get_latest_ohlc_strat_record(symbol: str):
     """Join OHLC and EMACStrategy tables and get latest record.
 
@@ -48,7 +53,17 @@ def get_latest_ohlc_strat_record(symbol: str):
 
     Args:
         symbol: Ticker symbol.
-    """    
+    """
     with Session(engine) as session:
-        stmt = select(OHLC.date, OHLC.close, EMACStrategy.forecast, EMACStrategy.instrument_risk).where(OHLC.symbol==symbol).join(EMACStrategy).order_by(OHLC.date.desc())
+        stmt = (
+            select(
+                OHLC.date,
+                OHLC.close,
+                EMACStrategy.forecast,
+                EMACStrategy.instrument_risk,
+            )
+            .where(OHLC.symbol == symbol)
+            .join(EMACStrategy)
+            .order_by(OHLC.date.desc())
+        )
         return session.exec(stmt).first()

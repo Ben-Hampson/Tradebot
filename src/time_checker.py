@@ -6,10 +6,9 @@ import logging
 import exchange_calendars as ecals
 import pandas as pd
 import pytz
+from sqlmodel import Session, select
 
-from src.db_utils import engine, Instrument
-
-from sqlmodel import select, Session
+from src.db_utils import Instrument, engine
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -73,7 +72,7 @@ def exchange_open_check(symbol: str) -> bool:
     with Session(engine) as session:
         sub_stmt = select(Instrument).where(Instrument.symbol == symbol)
         sub = session.exec(sub_stmt).one()
-    
+
     exchange = sub.exchange_iso
     time_zone = sub.time_zone
     now = pd.Timestamp.today(tz=time_zone)
