@@ -63,9 +63,9 @@ def main():
         if strat_outdated or strat_missing:
             update_one(instrument.symbol)
             log.info(f"{instrument.symbol}: Strategy updated.")
-            # TODO: Fix Telegram Message. Add Instrument Risk and Forecast to Telegram message.
-            # tg_message += f"\nForecast Updated.\n\nInstrument Risk: {instrument.risk}\nForecast: {instrument.forecast}"
-            # tg.outbound(tg_message)
+            latest = db_utils.get_latest_ohlc_strat_record
+            tg_message += f"\n{instrument.symbol} Forecast Updated.\n\nInstrument Risk: {latest.instrument_risk}\nForecast: {latest.forecast}"
+            tg.outbound(tg_message)
         else:
             log.info(f"{instrument.symbol}: Strategy already up to date.")
 
