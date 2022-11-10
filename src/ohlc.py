@@ -98,10 +98,10 @@ class OHLCUpdater:
                 all_data = data + all_data
                 limit -= 2000
                 to_date = data[0][0].date() - dt.timedelta(1)
-            
+
             if limit > 0:
                 data = self.request_cryptocompare(limit, to_date)
-                all_data = data + all_data 
+                all_data = data + all_data
         else:
             all_data = self.request_cryptocompare(limit, end_date)
 
@@ -111,7 +111,7 @@ class OHLCUpdater:
             for i, ohlc in enumerate(all_data):
                 if sum([ohlc[1], ohlc[2], ohlc[3], ohlc[4]]) != 0:
                     break
-            
+
             all_data = all_data[i:]
 
         if limit == 1:

@@ -5,7 +5,6 @@ import logging
 
 from sqlmodel import Session, select
 
-from src.runners import update_strategy
 from src import telegram_bot as tg
 from src.db_utils import (
     engine,
@@ -14,7 +13,7 @@ from src.db_utils import (
     get_portfolio,
 )
 from src.models import Instrument
-from src.runners import update_ohlc
+from src.runners import update_ohlc, update_strategy
 from src.runners.create_db import create_db_and_tables, populate_instruments
 
 logging.basicConfig(
@@ -29,7 +28,9 @@ def run(symbol: str):
     latest_record = get_latest_ohlc_strat_record(symbol)
 
     if latest_record is not None:
-        up_to_date = all((latest_record.date.date() == dt.date.today(), bool(latest_record.forecast)))
+        up_to_date = all(
+            (latest_record.date.date() == dt.date.today(), bool(latest_record.forecast))
+        )
     else:
         up_to_date = False
 

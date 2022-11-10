@@ -7,9 +7,9 @@ from typing import Optional
 from src import db_utils
 from src import telegram_bot as tg
 from src.db_utils import get_portfolio
+from src.models import OHLC, EMACStrategy
 from src.strategy import EMACStrategyUpdater
 from src.time_checker import time_check
-from src.models import EMACStrategy, OHLC
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -53,7 +53,12 @@ def main():
         latest_ohlc_strat = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
 
         strat_outdated = latest_ohlc.date > latest_strat.date
-        strat_missing = any([not bool(latest_ohlc_strat.forecast), not bool(latest_ohlc_strat.instrument_risk)])
+        strat_missing = any(
+            [
+                not bool(latest_ohlc_strat.forecast),
+                not bool(latest_ohlc_strat.instrument_risk),
+            ]
+        )
 
         if strat_outdated or strat_missing:
             update_one(instrument.symbol)

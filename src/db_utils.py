@@ -68,6 +68,7 @@ def get_latest_ohlc_strat_record(symbol: str):
         )
         return session.exec(stmt).first()
 
+
 def get_latest_record(symbol: str, table: SQLModel):
     """Get latest record of a given table.
 
@@ -81,9 +82,5 @@ def get_latest_record(symbol: str, table: SQLModel):
         Latest record.
     """
     with Session(engine) as session:
-        stmt = (
-            select(table)
-            .where(table.symbol == symbol)
-            .order_by(table.date.desc())
-        )
+        stmt = select(table).where(table.symbol == symbol).order_by(table.date.desc())
         return session.exec(stmt).first()

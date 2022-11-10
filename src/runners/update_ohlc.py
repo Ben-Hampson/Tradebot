@@ -2,11 +2,12 @@
 import logging
 from typing import Optional
 
-from src.db_utils import get_portfolio, get_instrument
+from src.db_utils import get_instrument, get_portfolio
 from src.ohlc import OHLCUpdater
 from src.time_checker import time_check
 
 log = logging.getLogger(__name__)
+
 
 def update_one(symbol: str):
     """Run OHLC Updater for one symbol.
@@ -17,6 +18,7 @@ def update_one(symbol: str):
     instrument = get_instrument(symbol)
     ohlc_data = OHLCUpdater(instrument.symbol)
     ohlc_data.update_ohlc_data()
+
 
 def main():
     """Populate OHLC data. If empty, start from the beginning. Otherwise, update data."""
@@ -31,7 +33,7 @@ def main():
             pass
         else:
             return
-        
+
         update_one(instrument.symbol)
 
 
