@@ -9,6 +9,7 @@ from src import telegram_bot as tg
 from src.db_utils import get_portfolio
 from src.strategy import EMACStrategyUpdater
 from src.time_checker import time_check
+from src.models import EMACStrategy, OHLC
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -46,9 +47,15 @@ def main():
         else:
             continue
 
-        latest_record = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
+        latest_ohlc = db_utils.get_latest_record(instrument.symbol, OHLC)
+        latest_strat = db_utils.get_latest_record(instrument.symbol, EMACStrategy)
 
-        if not latest_record.forecast or not latest_record.instrument_risk:
+        latest_ohlc_strat = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
+
+        strat_outdated = latest_ohlc.date > latest_strat.date
+        strat_missing = any([not bool(latest_ohlc_strat.forecast), not bool(latest_ohlc_strat.instrument_risk)])
+
+        if strat_outdated or strat_missing:
             update_one(instrument.symbol)
             log.info(f"{instrument.symbol}: Strategy updated.")
             # TODO: Fix Telegram Message. Add Instrument Risk and Forecast to Telegram message.

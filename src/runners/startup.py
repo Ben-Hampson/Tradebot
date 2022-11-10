@@ -28,8 +28,6 @@ def run(symbol: str):
     """Populate the database from scratch or update it."""
     latest_record = get_latest_ohlc_strat_record(symbol)
 
-    yesterday = dt.date.today() - dt.timedelta(1)
-
     if latest_record is not None:
         up_to_date = all((latest_record.date.date() == dt.date.today(), bool(latest_record.forecast)))
     else:
