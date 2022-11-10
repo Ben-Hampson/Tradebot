@@ -137,6 +137,7 @@ class Instrument:
         # Ignore whether it's +ve/-ve forecast until later.
         log.info(f"Sub Equity: {self.sub_equity}")
         log.info(f"Risk Target: {risk_target}")
+        log.info(f"Instrument Risk: {self.risk}")
         notional_exposure = ((self.sub_equity * risk_target) / self.risk) * (
             self.forecast / 10
         )
