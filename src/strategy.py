@@ -8,7 +8,7 @@ import tulipy as ti
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from src.db_utils import engine, get_instrument
+from src.db_utils import engine, get_instrument, get_latest_record
 from src.models import OHLC, EMACStrategy
 
 logging.basicConfig(
@@ -167,7 +167,7 @@ class EMACStrategyUpdater:
         raw32_128 = self.left_pad(raw32_128, 128, np.nan)
         raw64_256 = self.left_pad(raw64_256, 256, np.nan)
 
-        input = list(
+        data = list(
             zip(
                 date_data,
                 ema16_array,
@@ -180,13 +180,18 @@ class EMACStrategyUpdater:
                 raw64_256,
             )
         )
-        log.info(f"Input Length: {len(input)}")
+        log.info(f"Input Length: {len(data)}")
+
+        self.latest_forecast = get_latest_record(self.symbol, EMACStrategy)
+
+        if self.latest_forecast:
+            data = [x for x in data if x[0] > self.latest_forecast.date]
 
         # Update table
         records = []
 
         with Session(engine) as session:
-            for i in input:
+            for i in data:
                 record = EMACStrategy(
                     symbol_date=f"{self.symbol} {i[0]}",
                     symbol=self.symbol,

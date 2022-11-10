@@ -5,7 +5,7 @@ import logging
 
 from sqlmodel import Session, select
 
-from src import strategy
+from src.runners import update_strategy
 from src import telegram_bot as tg
 from src.db_utils import (
     engine,
@@ -30,15 +30,16 @@ def run(symbol: str):
 
     yesterday = dt.date.today() - dt.timedelta(1)
 
-    if not latest_record or latest_record.date.date() != yesterday:
-        log.info(f"{symbol}: No data for yesterday. Attempting update.")
+    if latest_record is not None:
+        up_to_date = all((latest_record.date.date() == dt.date.today(), bool(latest_record.forecast)))
+    else:
+        up_to_date = False
 
-        # Assumes all assets are crypto
-        update_ohlc.main(symbol)
+    if not up_to_date:
+        log.info(f"{symbol}: Updating OHLC and strategy data.")
 
-        strategy.calculate_emas(symbol)
-        strategy.combined_forecast(symbol)
-        strategy.instrument_risk(symbol)
+        update_ohlc.update_one(symbol)
+        update_strategy.update_one(symbol)
     else:
         log.info(f"{symbol}: Already up to date.")
 

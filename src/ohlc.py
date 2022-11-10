@@ -7,9 +7,9 @@ from typing import Optional
 
 import numpy as np
 import requests
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from src.db_utils import engine, get_instrument
+from src.db_utils import engine, get_instrument, get_latest_record
 from src.models import OHLC
 
 log = logging.getLogger(__name__)
@@ -40,20 +40,17 @@ class OHLCUpdater:
 
     def update_ohlc_data(self):
         """Main runner. Bring OHLC data in OHLC table up to date."""
-        with Session(engine) as session:
-            stmt = (
-                select(OHLC)
-                .where(OHLC.symbol == self.symbol)
-                .order_by(OHLC.date.desc())
-            )
-            latest_ohlc = session.exec(stmt).first()
-
-        yesterday = dt.date.today() - dt.timedelta(1)
+        latest_ohlc = get_latest_record(self.symbol, OHLC)
 
         if not latest_ohlc:
             self.get_ohlc_data(dt.date.today(), None)
             self.insert_ohlc_data()
-        elif latest_ohlc.date.date() != yesterday:
+        elif latest_ohlc.date.date() == dt.date.today() - dt.timedelta(1):
+            # Get data for 1 day (today)
+            self.get_ohlc_data(dt.date.today(), latest_ohlc.date.date())
+            self.insert_ohlc_data()
+        elif latest_ohlc.date.date() != dt.date.today():
+            # Get date for >1 day
             self.get_ohlc_data(
                 dt.date.today(), latest_ohlc.date.date() + dt.timedelta(1)
             )
@@ -98,11 +95,29 @@ class OHLCUpdater:
 
             while limit > 2000:
                 data = self.request_cryptocompare(2000, to_date)
-                all_data += data
+                all_data = data + all_data
                 limit -= 2000
-                to_date = data[0][0].date()
+                to_date = data[0][0].date() - dt.timedelta(1)
+            
+            if limit > 0:
+                data = self.request_cryptocompare(limit, to_date)
+                all_data = data + all_data 
         else:
             all_data = self.request_cryptocompare(limit, end_date)
+
+        if not start_date:
+            # Get rid of first data points with OHLC of 0,0,0,0
+            # because it breaks ti.volatility()
+            for i, ohlc in enumerate(all_data):
+                if sum([ohlc[1], ohlc[2], ohlc[3], ohlc[4]]) != 0:
+                    break
+            
+            all_data = all_data[i:]
+
+        if limit == 1:
+            # If just updating OHLC for one day (today).
+            # For some reason if you just ask for 1, CC actually gives 2 data points.
+            all_data = [all_data[1]]
 
         self.data = all_data
 
@@ -115,7 +130,9 @@ class OHLCUpdater:
                 "tsym": self.instrument.quote_currency,
                 "limit": str(limit),
                 "toTs": str(
-                    int(dt.datetime.timestamp(dt.datetime.combine(to_date, dt.time(0))))
+                    int(dt.datetime.timestamp(dt.datetime.combine(to_date, dt.time(6))))
+                    # The API gives the values at 00:00 GMT on that day.
+                    # Using 0600 instead of 0000 avoids getting the wrong day due to BST.
                 ),
                 "api_key": os.getenv("CC_API_KEY"),
             },
@@ -128,7 +145,7 @@ class OHLCUpdater:
         close_array_rev = []
 
         # The API returns one more than you asked for, so ignore the first
-        for bar in reversed(data["Data"]["Data"][1:]):
+        for bar in reversed(data["Data"]["Data"]):
             date = dt.datetime.fromtimestamp(bar["time"])
             open = float(bar["open"])
             high = float(bar["high"])

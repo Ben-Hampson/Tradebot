@@ -14,7 +14,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 path = Path(__file__).parent.parent
-APP_DB = path.joinpath("data/data.db")  # TODO: Base this on an env variable.
+APP_DB = path.joinpath("data/data_test.db")  # TODO: Base this on an env variable.
 
 engine = create_engine(f"sqlite:///{APP_DB}")
 
@@ -65,5 +65,25 @@ def get_latest_ohlc_strat_record(symbol: str):
             .where(OHLC.symbol == symbol)
             .join(EMACStrategy)
             .order_by(OHLC.date.desc())
+        )
+        return session.exec(stmt).first()
+
+def get_latest_record(symbol: str, table: SQLModel):
+    """Get latest record of a given table.
+
+    Returns latest or None(?).
+
+    Args:
+        symbol: Ticker symbol.
+        table: SQLModel of the table.
+
+    Returns:
+        Latest record.
+    """
+    with Session(engine) as session:
+        stmt = (
+            select(table)
+            .where(table.symbol == symbol)
+            .order_by(table.date.desc())
         )
         return session.exec(stmt).first()

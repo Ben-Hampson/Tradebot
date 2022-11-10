@@ -36,3 +36,29 @@ There are *many* things I want to improve in the future. To begin with:
 - Add tests (`pytest`) and static type checking (`mypy`)
 - Validate data that comes in from the APIs
 - Build a Dashboard using [streamlit](https://streamlit.io/) with charts from [Plotly](https://plotly.com/)
+
+
+---
+
+startup
+    for instrument in portfolio:
+        if not up_to_date:
+            update_ohlc.update_one(symbol)
+            update_strategy.update_one(symbol)
+
+update_ohlc
+    main:
+        for instrument in portfolio:
+            time_check
+            update_ohlc.update_one(symbol)
+
+update_strategy
+    main:
+        for instrument in portfolio:
+            time_check
+            update_strategy.update_one(symbol)
+
+Time Check:
+    - in update_one(symbol, time_check=True)
+        - Pass in functions
+        - How to test? Test suite.

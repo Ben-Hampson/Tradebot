@@ -27,30 +27,21 @@ def update_one(symbol: str):
     emac_strat.update_strat_data()
 
 
-def update_one_or_all(symbol: Optional[str] = None):
-    """Populate EMAC strategy data in database.
+def update_all():
+    """Populate EMAC strategy data in database for all instruments.
 
-    Calculates all strategic data since the start of OHLC data.
-
-    Args:
-        symbol: Ticker symbol. If None, calculate and update for all symbols.
-            Defaults to None.
-    """
-    if symbol:
-        update_one(symbol)
-    else:
-        portfolio = get_portfolio()
-        for instrument in portfolio:
-            update_one(instrument.symbol)
+    Calculates all strategic data since the start of OHLC data."""
+    portfolio = get_portfolio()
+    for instrument in portfolio:
+        update_one(instrument.symbol)
 
 
 def main():
     """Populate the EMACStrategy table from scratch or update it, depending on its status."""
     for instrument in get_portfolio():
         # Check if forecast_time was in the last 15 minutes.
-        if time_check(
-            instrument.symbol, "forecast"
-        ):  # TODO: os.getenv() If dev, ignore time_check.
+        # TODO: os.getenv() If dev, ignore time_check.
+        if time_check(instrument.symbol, "forecast"):
             pass
         else:
             continue
