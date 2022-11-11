@@ -4,9 +4,9 @@ import os
 import sys
 from textwrap import dedent
 
+from src import crypto
 from src import telegram_bot as tg
-from src.crypto import Instrument
-from src.database import connect
+from src.db_utils import get_portfolio
 from src.time_checker import time_check
 
 logging.basicConfig(
@@ -20,38 +20,29 @@ def main():
     """Get portfolio. Create Instruments for each one."""
     log.info("Trading Mode: %s", os.getenv("TRADING_MODE", "PAPER"))
 
-    # TODO: Use sqlalchemy
-    _, cursor = connect()
-    cursor.execute(
-        """
-        SELECT symbol, base_currency, quote_currency, exchange
-        FROM portfolio
-        """
-    )
+    portfolio = get_portfolio()
 
-    rows = cursor.fetchall()
-
-    if not rows:
+    if not portfolio:
         log.error("No Instruments in 'portfolio' in database. Stopping.")
         sys.exit()
 
-    sub_weight = 1 / len(rows)
+    sub_weight = 1 / len(portfolio)
 
     portfolio = (
-        Instrument(
-            row["symbol"],
-            row["exchange"],
-            row["base_currency"],
-            row["quote_currency"],
+        crypto.Instrument(  # Name 'Instrument' clashes with models.Instrument? OrderInstrument?
+            row.symbol,
+            row.exchange,
+            row.base_currency,
+            row.quote_currency,
             sub_weight,
         )
-        for row in rows
+        for row in portfolio
     )
 
     for instrument in portfolio:
         # Exchange is always open, no need to check.
-        # TODO: argparse flag to disable time check.
         # Check if order_time was in the last 15 minutes.
+        # TODO: if os.getenv(ENVIRONMENT) == "TEST", ignore time-check.
         if time_check(instrument.symbol, "order"):
             pass
         else:
@@ -61,6 +52,7 @@ def main():
         instrument.calc_desired_position()
 
         # Send the order
+        # TODO: if os.getenv(ENVIRONMENT) != "LIVE", don't do this.
         if instrument.decision:
             instrument.order()
 
@@ -81,8 +73,6 @@ def main():
         log.info(f"{instrument.symbol}: Complete")
 
     log.info("Finished.")
-
-    print("Finished")
 
 
 if __name__ == "__main__":

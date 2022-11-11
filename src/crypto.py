@@ -1,12 +1,14 @@
 import logging
+import os
 from functools import cached_property
 from typing import Union
-import os
 
 from forex_python.converter import CurrencyCodes, CurrencyRates
+from sqlmodel import Session, select
 
-from src.database import connect
+from src.db_utils import engine
 from src.dydx_exchange import dYdXExchange
+from src.models import OHLC, EMACStrategy
 from src.tools import round_decimals_down
 
 logging.basicConfig(
@@ -18,7 +20,7 @@ log = logging.getLogger(__name__)
 
 def exchange_factory(exchange: str):
     """Factory for Exchange classes."""
-    if exchange.lower() == "crypto":
+    if exchange.lower() == "dydx":
         return dYdXExchange()
     if exchange.lower() == "stock":
         log.error("Stock exchange not implemented yet.")
@@ -88,23 +90,26 @@ class Instrument:
     @cached_property
     def latest_record(self) -> dict:
         """Get the latest record for the instrument from the database."""
-        _, cursor = connect()
-        cursor.execute(
-            f"""
-            SELECT date, close, forecast, instrument_risk
-            FROM {self.symbol}
-            ORDER BY date DESC
-            LIMIT 1
-            """
-        )
-
-        rows = cursor.fetchall()
+        with Session(engine) as session:
+            # Join OHLC and EMACStrategy tables and get latest record.
+            stmt = (
+                select(
+                    OHLC.date,
+                    OHLC.close,
+                    EMACStrategy.forecast,
+                    EMACStrategy.instrument_risk,
+                )
+                .where(OHLC.symbol == self.symbol)
+                .join(EMACStrategy)
+                .order_by(OHLC.date.desc())
+            )
+            latest_record = session.exec(stmt).first()
 
         return {
-            "date": rows[0]["date"],
-            "close": rows[0]["close"],
-            "forecast": rows[0]["forecast"],
-            "risk": rows[0]["instrument_risk"],
+            "date": latest_record.date,
+            "close": latest_record.close,
+            "forecast": latest_record.forecast,
+            "risk": latest_record.instrument_risk,
         }
 
     @cached_property
@@ -132,6 +137,7 @@ class Instrument:
         # Ignore whether it's +ve/-ve forecast until later.
         log.info(f"Sub Equity: {self.sub_equity}")
         log.info(f"Risk Target: {risk_target}")
+        log.info(f"Instrument Risk: {self.risk}")
         notional_exposure = ((self.sub_equity * risk_target) / self.risk) * (
             self.forecast / 10
         )

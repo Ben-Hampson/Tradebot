@@ -2,20 +2,8 @@
 
 # --- Don't upload the secret sauce! ---
 app/env
-# app/src/crypto.py
-# app/src/data.db
-# app/src/database.py
-# app/src/startup.py
-# app/src/stocks.py
-# app/src/subsystems.py
-# # Unsure if I need to hide this, but it might have IB account data:
-ib-gateway/ib/jts.ini
-# # These 3 readmes have account names in them:
-ib-gateway/root/Jts/*/readme.txt
-# Dockerfile contains SSH?!
-ib-gateway/Dockerfile 
 docker-compose*.yml
-data.db
+data*.db
 .python-version
 
 

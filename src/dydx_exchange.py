@@ -27,6 +27,7 @@ class dYdXExchange:
         STARK_PRIVATE_KEY = hex(int("0x" + os.getenv("STARK_PRIVATE_KEY"), base=16))
         WEB3_PROVIDER_URL = "https://rpc.ankr.com/eth"
 
+        # TODO: if os.getenv("ENVIRONMENT") == "TESTING", paper trade.
         self.client = Client(
             network_id=NETWORK_ID_MAINNET,
             host=API_HOST_MAINNET,
