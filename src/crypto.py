@@ -7,7 +7,7 @@ from forex_python.converter import CurrencyCodes, CurrencyRates
 from sqlmodel import Session, select
 
 from src.db_utils import engine
-from src.dydx_exchange import dYdXExchange
+from src.exchanges import dYdXExchange
 from src.models import OHLC, EMACStrategy
 from src.tools import round_decimals_down
 

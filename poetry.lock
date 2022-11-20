@@ -479,6 +479,17 @@ lint = ["black (>=18.6b4,<19)", "flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy
 test = ["hypothesis (>=4.43.0,<5.0.0)", "pytest (==5.4.1)", "pytest-xdist", "tox (==3.14.6)"]
 
 [[package]]
+name = "eventkit"
+version = "1.0.0"
+description = "Event-driven data pipelines"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+numpy = "*"
+
+[[package]]
 name = "exchange-calendars"
 version = "3.6.3"
 description = "exchange_calendars is a Python library with securities exchange calendars"
@@ -581,6 +592,18 @@ test = ["eth-utils (>=1.0.1,<3)", "hypothesis (>=3.44.24,<=6.31.6)", "tox (>=3.2
 lint = ["black (>=22,<23)", "pydocstyle (>=5.0.0,<6)", "mypy (==0.971)", "isort (>=4.2.15,<5)", "flake8 (==3.7.9)"]
 doc = ["towncrier (>=21,<22)", "sphinx-rtd-theme (>=0.1.9,<1)", "Sphinx (>=4.0.0,<5)"]
 dev = ["towncrier (>=21,<22)", "sphinx-rtd-theme (>=0.1.9,<1)", "Sphinx (>=4.0.0,<5)", "black (>=22,<23)", "pydocstyle (>=5.0.0,<6)", "mypy (==0.971)", "isort (>=4.2.15,<5)", "flake8 (==3.7.9)", "eth-utils (>=1.0.1,<3)", "hypothesis (>=3.44.24,<=6.31.6)", "tox (>=3.25.1,<4)", "pytest-xdist", "pytest (>=7,<8)", "ipython", "twine", "wheel", "pytest-watch (>=4.1.0,<5)", "bumpversion (>=0.5.3,<1)"]
+
+[[package]]
+name = "ib-insync"
+version = "0.9.76"
+description = "Python sync/async framework for Interactive Brokers API"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+eventkit = "*"
+nest-asyncio = "*"
 
 [[package]]
 name = "idna"
@@ -744,6 +767,14 @@ description = "Experimental type system extensions for programs checked with the
 category = "dev"
 optional = false
 python-versions = "*"
+
+[[package]]
+name = "nest-asyncio"
+version = "1.5.6"
+description = "Patch asyncio to allow nested event loops"
+category = "main"
+optional = false
+python-versions = ">=3.5"
 
 [[package]]
 name = "netaddr"
@@ -1433,7 +1464,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.0"
-content-hash = "cc07ad2296bf5010507b538c146b47f036e103292a2bdb36cff81a4f6d05f8cc"
+content-hash = "057acfa9a7c4467787a61d587e3d960730e1afef9617677da9378e5ff361c9b1"
 
 [metadata.files]
 aiohttp = [
@@ -1787,6 +1818,10 @@ eth-utils = [
     {file = "eth-utils-1.10.0.tar.gz", hash = "sha256:bf82762a46978714190b0370265a7148c954d3f0adaa31c6f085ea375e4c61af"},
     {file = "eth_utils-1.10.0-py3-none-any.whl", hash = "sha256:74240a8c6f652d085ed3c85f5f1654203d2f10ff9062f83b3bad0a12ff321c7a"},
 ]
+eventkit = [
+    {file = "eventkit-1.0.0-py3-none-any.whl", hash = "sha256:c3c1ae6e15cda9970c3996b0aaeda48431fc6b8674c01e7a7ff77a13629cc021"},
+    {file = "eventkit-1.0.0.tar.gz", hash = "sha256:c9c4bb8a9685e4131e845882512a630d6a57acee148f38af286562a76873e4a9"},
+]
 exchange-calendars = [
     {file = "exchange_calendars-3.6.3.tar.gz", hash = "sha256:99d151031a08397668d2707806566fdc7b3ae874e81ff13f876caed2f2a1731d"},
 ]
@@ -1929,6 +1964,10 @@ h11 = [
 hexbytes = [
     {file = "hexbytes-0.3.0-py3-none-any.whl", hash = "sha256:21c3a5bd00a383097f0369c387174e79839d75c4ccc3a7edda315c9644f4458a"},
     {file = "hexbytes-0.3.0.tar.gz", hash = "sha256:afeebfb800f5f15a3ca5bab52e49eabcb4b6dac06ec8ff01a94fdb890c6c0712"},
+]
+ib-insync = [
+    {file = "ib_insync-0.9.76-py3-none-any.whl", hash = "sha256:fecdb691a13fa51565739cf7e5a09918e9bce02b719936213b3c0d37c3b7b80a"},
+    {file = "ib_insync-0.9.76.tar.gz", hash = "sha256:befa70750940ebade03aa4612ba7fc2d62269b71620347573ac0f62331505bdd"},
 ]
 idna = [
     {file = "idna-3.4-py3-none-any.whl", hash = "sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2"},
@@ -2108,6 +2147,10 @@ multidict = [
 mypy-extensions = [
     {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
     {file = "mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
+]
+nest-asyncio = [
+    {file = "nest_asyncio-1.5.6-py3-none-any.whl", hash = "sha256:b9a953fb40dceaa587d109609098db21900182b16440652454a146cffb06e8b8"},
+    {file = "nest_asyncio-1.5.6.tar.gz", hash = "sha256:d267cc1ff794403f7df692964d1d2a3fa9418ffea2a3f6859a439ff482fef290"},
 ]
 netaddr = [
     {file = "netaddr-0.8.0-py2.py3-none-any.whl", hash = "sha256:9666d0232c32d2656e5e5f8d735f58fd6c7457ce52fc21c98d45f2af78f990ac"},
