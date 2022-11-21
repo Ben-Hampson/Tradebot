@@ -7,7 +7,7 @@ from forex_python.converter import CurrencyCodes, CurrencyRates
 from sqlmodel import Session, select
 
 from src.db_utils import engine
-from src.exchanges import dYdXExchange
+from src.exchanges import dYdXExchange, IBExchange
 from src.models import OHLC, EMACStrategy
 from src.tools import round_decimals_down
 
@@ -23,8 +23,7 @@ def exchange_factory(exchange: str):
     if exchange.lower() == "dydx":
         return dYdXExchange()
     if exchange.lower() == "stock":
-        log.error("Stock exchange not implemented yet.")
-        return None
+        return IBExchange()
 
     log.error(f"Exchange '{exchange}' currently not recognised.")
     return None

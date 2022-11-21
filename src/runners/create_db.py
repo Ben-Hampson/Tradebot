@@ -23,7 +23,32 @@ def populate_instruments():
             base_currency="BTC",
             quote_currency="USD",
             exchange="dydx",
+            ohlc_data_source="crypto-compare",
             vehicle="crypto",
+            time_zone="Europe/London",
+            order_time=dt.time(7, 0),
+            forecast_time=dt.time(6, 0),
+        ),
+        Instrument(
+            # Vanguard Global All-Cap ESG Acc. Index ETF
+            symbol="V3AB",
+            # base_currency="",
+            quote_currency="GBP",  # ?
+            exchange="interactive-brokers",
+            ohlc_data_source="interactive-brokers",
+            vehicle="stock",
+            time_zone="Europe/London",
+            order_time=dt.time(7, 0),
+            forecast_time=dt.time(6, 0),
+        ),
+        Instrument(
+            # XAUUSD on London Stock Exchange
+            symbol="XAUUSD",
+            # base_currency="",  
+            quote_currency="USD",  # ?
+            exchange="interactive-brokers",
+            ohlc_data_source="interactive-brokers",
+            vehicle="commodity",
             time_zone="Europe/London",
             order_time=dt.time(7, 0),
             forecast_time=dt.time(6, 0),

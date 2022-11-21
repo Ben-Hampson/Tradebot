@@ -11,6 +11,7 @@ class Instrument(SQLModel, table=True):
     base_currency: str
     quote_currency: str
     exchange: str
+    ohlc_data_source: str
     vehicle: str
     time_zone: str
     order_time: time

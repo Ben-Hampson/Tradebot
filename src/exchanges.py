@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import logging
 import os
 import time
+import datetime as dt
 
 from dydx3 import Client
 from dydx3.constants import (
@@ -12,6 +13,7 @@ from dydx3.constants import (
     ORDER_TYPE_MARKET,
     TIME_IN_FORCE_FOK,
 )
+from ib_insync import Stock, IB, MarketOrder
 from web3 import Web3
 
 logging.basicConfig(
@@ -254,6 +256,7 @@ class IBExchange(Exchange):
         price = str(int(current_price * slippage[side]))
         symbol = self.get_symbol(base_currency, quote_currency)
 
+        # TODO: If Stock, do Stock(). If 'commodity', do Commodity()
         contract = Stock(symbol, 'SMART', base_currency)
         self.ib.qualifyContracts(contract)
 
