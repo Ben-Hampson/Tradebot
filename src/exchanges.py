@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 import logging
 import os
 import time
-import datetime as dt
 
 from dydx3 import Client
 from dydx3.constants import (

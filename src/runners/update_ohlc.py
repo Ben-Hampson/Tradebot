@@ -1,6 +1,5 @@
 """Runner to update OHLC data in database."""
 import logging
-from typing import Optional
 
 from src.db_utils import get_instrument, get_portfolio
 from src.ohlc import OHLCUpdater

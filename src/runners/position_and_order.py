@@ -4,10 +4,10 @@ import os
 import sys
 from textwrap import dedent
 
-from src import crypto
+from src.position import Position, exchange_factory
 from src import telegram_bot as tg
 from src.db_utils import get_portfolio
-from src.time_checker import time_check
+from src.time_checker import time_check, exchange_open_check
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -17,9 +17,10 @@ log = logging.getLogger(__name__)
 
 
 def main():
-    """Get portfolio. Create Instruments for each one."""
+    """Get portfolio. Position and execute order if necessary."""
     log.info("Trading Mode: %s", os.getenv("TRADING_MODE", "PAPER"))
 
+    # Portfolio
     portfolio = get_portfolio()
 
     if not portfolio:
@@ -28,40 +29,34 @@ def main():
 
     sub_weight = 1 / len(portfolio)
 
-    portfolio = (
-        crypto.Instrument(  # Name 'Instrument' clashes with models.Instrument? OrderInstrument?
-            row.symbol,
-            row.exchange,
-            row.base_currency,
-            row.quote_currency,
+    for instrument in portfolio:
+        position = Position(
+            instrument.symbol,
+            instrument.exchange,
+            instrument.base_currency,
+            instrument.quote_currency,
             sub_weight,
         )
-        for row in portfolio
-    )
 
-    for instrument in portfolio:
-        # Exchange is always open, no need to check.
-        # Check if order_time was in the last 15 minutes.
         # TODO: if os.getenv(ENVIRONMENT) == "TEST", ignore time-check.
-        if time_check(instrument.symbol, "order"):
+        if time_check(instrument.symbol, "order") and exchange_open_check(instrument.symbol):
             pass
         else:
             continue
 
-        # Calculate desired position
-        instrument.calc_desired_position()
+        # Calculate Desired Position
+        position.calc_desired_position()
 
-        # Send the order
-        # TODO: if os.getenv(ENVIRONMENT) != "LIVE", don't do this.
-        if instrument.decision:
-            instrument.order()
+        if position.decision:
+            # Execute Order
+            exc = exchange_factory(instrument.exchange)
+            exc.order(instrument.base_currency, instrument.quote_currency, position.side, position.quantity)
 
-        # Send the message
-        if instrument.decision:
+            # Telegram Message
             message = f"""\
             *{instrument.symbol}*
             
-            {instrument.side} {instrument.quantity}"""
+            {position.side} {position.quantity}"""
         else:
             message = f"""\
             *{instrument.symbol}*

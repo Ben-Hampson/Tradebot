@@ -22,14 +22,16 @@ def exchange_factory(exchange: str):
     """Factory for Exchange classes."""
     if exchange.lower() == "dydx":
         return dYdXExchange()
-    if exchange.lower() == "stock":
+    if exchange.lower() == "interactive-brokers":
         return IBExchange()
 
     log.error(f"Exchange '{exchange}' currently not recognised.")
     return None
 
 
-class Instrument:
+class Position:
+    """Object to use forecast and current position to decide whether to change position."""
+    
     def __init__(
         self,
         symbol: str,
@@ -193,21 +195,3 @@ class Instrument:
             log.info(f"No change.")
 
         return (self.decision, self.side, self.quantity)
-
-    def order(self):
-        """Creates an order on the exchange for this instrument.
-
-        First, check that an affirmative decision was made.
-        """
-        if not self.decision:
-            print("Decision was to NOT trade. Will not order.")
-
-        trading_mode = os.getenv("TRADING_MODE")
-        if trading_mode == "LIVE":
-            log.info("Trading Mode: Live")
-            self.exchange.order(
-                self.base_currency, self.quote_currency, self.side, self.quantity
-            )
-        else:
-            log.info("Trading Mode: Paper")
-            log.info("Not making order.")

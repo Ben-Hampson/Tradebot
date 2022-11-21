@@ -4,4 +4,4 @@
 
 0,15,30,45 * * * * cd /home && /venv/bin/python -m src.runners.update_ohlc >> /home/logs/update_ohlc.log 2>&1
 5,20,35,50 * * * * cd /home && /venv/bin/python -m src.runners.update_strategy >> /home/logs/update_strategy.log 2>&1
-10,15,40,55 * * * * cd /home && /venv/bin/python -m src.runners.order_crypto >> /home/logs/order_crypto.log 2>&1
+10,15,40,55 * * * * cd /home && /venv/bin/python -m src.runners.position_and_order >> /home/logs/position_and_order.log 2>&1
