@@ -18,41 +18,28 @@ log = logging.getLogger(__name__)
 def populate_instruments():
     """Populate 'instruments' table."""
     instruments = [
+        # Instrument(
+        #     symbol="BTCUSD",
+        #     base_currency="BTC",
+        #     quote_currency="USD",
+        #     exchange="dydx",
+        #     ohlc_data_source="crypto-compare",
+        #     vehicle="crypto",
+        #     time_zone="Europe/London",
+        #     order_time=dt.time(7, 0),
+        #     forecast_time=dt.time(6, 0),
+        # ),
         Instrument(
-            symbol="BTCUSD",
-            base_currency="BTC",
-            quote_currency="USD",
-            exchange="dydx",
-            ohlc_data_source="crypto-compare",
-            vehicle="crypto",
-            time_zone="Europe/London",
-            order_time=dt.time(7, 0),
-            forecast_time=dt.time(6, 0),
-        ),
-        Instrument(
-            # Vanguard Global All-Cap ESG Acc. Index ETF
-            symbol="V3AB",
-            # base_currency="",
-            quote_currency="GBP",  # ?
-            exchange="interactive-brokers",
-            ohlc_data_source="interactive-brokers",
-            vehicle="stock",
-            time_zone="Europe/London",
-            order_time=dt.time(7, 0),
-            forecast_time=dt.time(6, 0),
-        ),
-        Instrument(
-            # XAUUSD on London Stock Exchange
-            symbol="XAUUSD",
-            # base_currency="",  
+            # Nvidia
+            symbol="NVDA",
             quote_currency="USD",  # ?
-            exchange="interactive-brokers",
-            ohlc_data_source="interactive-brokers",
-            vehicle="commodity",
-            time_zone="Europe/London",
-            order_time=dt.time(7, 0),
+            exchange="alpaca",
+            ohlc_data_source="alpaca",
+            vehicle="stock",
+            time_zone="America/New_York",
+            order_time=dt.time(10, 0),
             forecast_time=dt.time(6, 0),
-        )
+        ),
     ]
 
     with Session(engine) as session:

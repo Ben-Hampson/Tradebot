@@ -7,7 +7,7 @@ from forex_python.converter import CurrencyCodes, CurrencyRates
 from sqlmodel import Session, select
 
 from src.db_utils import engine
-from src.exchanges import dYdXExchange, IBExchange
+from src.exchanges import AlpacaExchange
 from src.models import OHLC, EMACStrategy
 from src.tools import round_decimals_down
 
@@ -20,10 +20,12 @@ log = logging.getLogger(__name__)
 
 def exchange_factory(exchange: str):
     """Factory for Exchange classes."""
-    if exchange.lower() == "dydx":
-        return dYdXExchange()
-    if exchange.lower() == "interactive-brokers":
-        return IBExchange()
+    # if exchange.lower() == "dydx":
+    #     return dYdXExchange()
+    # if exchange.lower() == "interactive-brokers":
+    #     return IBExchange()
+    if exchange.lower() == "alpaca":
+        return AlpacaExchange()
 
     log.error(f"Exchange '{exchange}' currently not recognised.")
     return None
