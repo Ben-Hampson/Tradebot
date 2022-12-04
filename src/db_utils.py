@@ -14,7 +14,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 path = Path(__file__).parent.parent
-APP_DB = path.joinpath("data/data.db")  # TODO: Base this on an env variable.
+APP_DB = path.joinpath("data/data_alpaca.db")  # TODO: Base this on an env variable.
 
 engine = create_engine(f"sqlite:///{APP_DB}")
 

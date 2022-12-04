@@ -6,11 +6,17 @@ import os
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 import requests
 from sqlmodel import Session
 
 from src.db_utils import engine, get_instrument, get_latest_record
+from src.time_checker import time_check, exchange_open_check
 from src.models import OHLC
+from alpaca.data import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest
+from alpaca.data.timeframe import TimeFrame
+
 
 log = logging.getLogger(__name__)
 
@@ -191,3 +197,77 @@ class OHLCUpdater:
             session.commit()
 
         log.info(f"{self.symbol} OHLC data: added to database.")
+
+
+class AlpacaOHLC:
+    """Get OHLC data from Alpaca."""
+
+    def __init__(
+        self,
+        symbol: str,
+        end_date: Optional[dt.date] = None,
+        start_date: Optional[dt.date] = None,
+    ):
+        """Initialiser.
+
+        Args:
+        symbol: Instrument symbol e.g. BTCUSD.
+        end_date: The latest date to get data for (inclusive?). Defaults to None.
+            If None, will get data up to the latest possible date.
+        start_date: The earliest date to get data for (inclusive?). Defaults to None.
+            If None, will get data from the earliest possible date.
+        """
+        self.shdc = StockHistoricalDataClient(os.getenv("ALPACA_LIVE_KEY_ID"), os.getenv("ALPACA_LIVE_SECRET_KEY"))
+        self.symbol = symbol
+
+    def update_ohlc_data(self):
+        """Main runner. Download OHLC data and insert into table."""
+        latest_ohlc = get_latest_record(self.symbol, OHLC)
+
+        if latest_ohlc.date.date() == dt.date.today():
+            log.info(f"{self.symbol} data is already up to date. No records added.")
+            return None
+
+        if not latest_ohlc:
+            start = None
+            end = dt.datetime.combine(dt.date.today(), 0)
+        elif latest_ohlc.date.date() == dt.date.today() - dt.timedelta(1):
+            # Get data for 1 day (today)
+            start = latest_ohlc.date
+            end = dt.datetime.combine(dt.date.today(), 0)
+        elif latest_ohlc.date.date() != dt.date.today():
+            # Get date for >1 day
+            start = latest_ohlc.date + dt.timedelta(1)
+            end = dt.datetime.combine(dt.date.today(), dt.time(0,0,0))
+        # If yesterday the exchange was closed, return None
+
+        self.get_ohlc_data(start, end)
+
+        if hasattr(self, "df"):
+            self.insert_ohlc_data()
+
+    def get_ohlc_data(self, start_date: dt.datetime, end_date: dt.datetime):
+        """Get OHLC data for an Instrument between two dates.
+
+        Inclusive of the start date and end date."""
+        if os.getenv("TIME_CHECKER") == "1":
+            if time_check(self.symbol, "forecast"):
+                return None
+
+        request_params = StockBarsRequest(
+                        symbol_or_symbols=self.symbol,
+                        timeframe=TimeFrame.Day,
+                        start=start_date,
+                        end=end_date
+                        )
+
+        bars = self.shdc.get_stock_bars(request_params)
+        df = bars.df.reset_index()
+        df['date'] = [x.to_pydatetime() for x in df.timestamp]
+        df['symbol_date'] = df['symbol'] + ' ' + df.timestamp.dt.strftime('%Y-%m-%d')
+
+        self.df = df[['symbol_date', 'symbol', 'date', 'open', 'high', 'low', 'close', 'volume']]
+
+    def insert_ohlc_data(self):
+        """Insert OHLC data into 'ohlc' table."""
+        self.df.to_sql("ohlc", engine, if_exists="append", index=False)

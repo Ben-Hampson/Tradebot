@@ -32,8 +32,10 @@ def populate_instruments():
         Instrument(
             # Nvidia
             symbol="NVDA",
-            quote_currency="USD",  # ?
+            # base_currency="",
+            quote_currency="USD",
             exchange="alpaca",
+            exchange_iso="NYSE",  # It's on NASDAQ really, but they have the same hours.
             ohlc_data_source="alpaca",
             vehicle="stock",
             time_zone="America/New_York",
@@ -48,8 +50,8 @@ def populate_instruments():
             try:
                 session.commit()
                 log.info(f"{inst.symbol}: Added to the Instruments table.")
-            except IntegrityError:
-                log.info(f"{inst.symbol}: Already in the Instruments table.")
+            except IntegrityError as exc:
+                log.info(f"{inst.symbol}: Already in the Instruments table.")  # Also: if required field not filled
 
 
 if __name__ == "__main__":
