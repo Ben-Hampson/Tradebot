@@ -6,12 +6,11 @@ import os
 from typing import Optional
 
 import numpy as np
-import pandas as pd
 import requests
 from sqlmodel import Session
 
 from src.db_utils import engine, get_instrument, get_latest_record
-from src.time_checker import time_check, exchange_open_check
+from src.time_checker import time_check
 from src.models import OHLC
 from alpaca.data import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
@@ -271,3 +270,21 @@ class AlpacaOHLC:
     def insert_ohlc_data(self):
         """Insert OHLC data into 'ohlc' table."""
         self.df.to_sql("ohlc", engine, if_exists="append", index=False)
+
+
+#############
+
+class OHLCGetter(ABC):  # ABC or AbstractBaseClass?
+    """ABC for class that gets OHLC(V) data from a data source."""
+
+    @abstractmethod
+    def __init__(self):
+        pass
+
+    def download_data(self):
+        pass
+
+    def create_df(self):
+        """Put the data into a DataFrame.
+        
+        Columns: 'open', 'high', 'low', 'close', 'volume'."""
