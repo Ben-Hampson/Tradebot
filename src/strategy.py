@@ -193,7 +193,7 @@ class EMACStrategyUpdater:
         with Session(engine) as session:
             for i in data:
                 record = EMACStrategy(
-                    symbol_date=f"{self.symbol} {i[0]}",
+                    symbol_date=f"{self.symbol} {i[0].strftime('%Y-%m-%d')}",
                     symbol=self.symbol,
                     date=i[0],
                     ema_16=i[1],

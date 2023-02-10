@@ -49,19 +49,25 @@ def main():
 
         latest_ohlc_strat = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
 
-        strat_outdated = latest_ohlc.date > latest_strat.date
-        strat_missing = any(
-            [
-                not bool(latest_ohlc_strat.forecast),
-                not bool(latest_ohlc_strat.instrument_risk),
-            ]
-        )
+        # TODO: This strat_missing is a mess
+        strat_missing = strat_outdated = not bool(latest_ohlc_strat)
+        
+        if not strat_missing:
+            strat_missing = any(
+                [
+                    not bool(latest_ohlc_strat.forecast),
+                    not bool(latest_ohlc_strat.instrument_risk),
+                ]
+            )
+        
+        if not strat_missing:
+            strat_outdated = latest_ohlc.date > latest_strat.date
 
         if strat_outdated or strat_missing:
             update_one(instrument.symbol)
             log.info(f"{instrument.symbol}: Strategy updated.")
-            latest = db_utils.get_latest_ohlc_strat_record
-            tg_message += f"\n{instrument.symbol} Forecast Updated.\n\nInstrument Risk: {latest.instrument_risk}\nForecast: {latest.forecast}"
+            latest = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
+            tg_message = f"\n{instrument.symbol} Forecast Updated.\n\nInstrument Risk: {latest.instrument_risk}\nForecast: {latest.forecast}"
             tg.outbound(tg_message)
         else:
             log.info(f"{instrument.symbol}: Strategy already up to date.")
