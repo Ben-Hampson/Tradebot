@@ -229,15 +229,15 @@ class AlpacaOHLC:
 
         if not latest_ohlc:
             start = None
-            end = dt.datetime.combine(dt.date.today(), 0)
+            end = dt.datetime.now() - dt.timedelta(minutes=20)
         elif latest_ohlc.date.date() == dt.date.today() - dt.timedelta(1):
             # Get data for 1 day (today)
-            start = latest_ohlc.date
-            end = dt.datetime.combine(dt.date.today(), 0)
+            start = latest_ohlc.date + dt.timedelta(1)
+            end = dt.datetime.now() - dt.timedelta(minutes=20)
         elif latest_ohlc.date.date() != dt.date.today():
             # Get date for >1 day
             start = latest_ohlc.date + dt.timedelta(1)
-            end = dt.datetime.combine(dt.date.today(), dt.time(0,0,0))
+            end = dt.datetime.now() - dt.timedelta(minutes=20)
         # If yesterday the exchange was closed, return None
 
         self.get_ohlc_data(start, end)
@@ -250,7 +250,7 @@ class AlpacaOHLC:
 
         Inclusive of the start date and end date."""
         if os.getenv("TIME_CHECKER") == "1":
-            if time_check(self.symbol, "forecast"):
+            if not time_check(self.symbol, "forecast"):
                 return None
 
         request_params = StockBarsRequest(
@@ -270,21 +270,3 @@ class AlpacaOHLC:
     def insert_ohlc_data(self):
         """Insert OHLC data into 'ohlc' table."""
         self.df.to_sql("ohlc", engine, if_exists="append", index=False)
-
-
-#############
-
-class OHLCGetter(ABC):  # ABC or AbstractBaseClass?
-    """ABC for class that gets OHLC(V) data from a data source."""
-
-    @abstractmethod
-    def __init__(self):
-        pass
-
-    def download_data(self):
-        pass
-
-    def create_df(self):
-        """Put the data into a DataFrame.
-        
-        Columns: 'open', 'high', 'low', 'close', 'volume'."""
