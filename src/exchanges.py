@@ -107,7 +107,11 @@ class AlpacaExchange(Exchange):
         Return the amount of the token. e.g. 0.01 ETH.
         Positive means the position is long. Negative means it's short.
         """
-        return self.tc.get_all_positions()
+        try:
+            asset = next(asset for asset in self.all_positions if asset.symbol == symbol)
+        except StopIteration:
+            asset = {"qty": 0}
+        return int(asset["qty"])  # TODO: Can it be a float?
 
     @property
     def total_equity(self) -> float:

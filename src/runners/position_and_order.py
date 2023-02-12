@@ -38,11 +38,9 @@ def main():
             sub_weight,
         )
 
-        # TODO: if os.getenv(ENVIRONMENT) == "TEST", ignore time-check.
-        if time_check(instrument.symbol, "order") and exchange_open_check(instrument.symbol):
-            pass
-        else:
-            continue
+        if os.getenv("TIME_CHECKER") == "1":
+            if not time_check(instrument.symbol, "order") and exchange_open_check(instrument.symbol):
+                return None
 
         # Calculate Desired Position
         position.calc_desired_position()
@@ -50,7 +48,7 @@ def main():
         if position.decision:
             # Execute Order
             exc = exchange_factory(instrument.exchange)
-            exc.order(instrument.base_currency, instrument.quote_currency, position.side, position.quantity)
+            exc.order(instrument.symbol, position.side, position.quantity)
 
             # Telegram Message
             message = f"""\

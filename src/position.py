@@ -83,12 +83,12 @@ class Position:
     @cached_property
     def position(self):
         """Get the current position (quantity of the instrument) for this instrument on the exchange."""
-        return self.exchange.get_position(self.base_currency, self.quote_currency)
+        return self.exchange.get_position(self.symbol)
 
     @cached_property
     def price(self):
         """Get the current price for this instrument from the exchange."""
-        return self.exchange.get_current_price(self.base_currency, self.quote_currency)
+        return self.exchange.get_current_price(self.symbol)
 
     @cached_property
     def latest_record(self) -> dict:
