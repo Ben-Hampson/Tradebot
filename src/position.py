@@ -7,7 +7,7 @@ from forex_python.converter import CurrencyCodes, CurrencyRates
 from sqlmodel import Session, select
 
 from src.db_utils import engine
-from src.exchanges import AlpacaExchange
+from src.exchange_factory import ExchangeFactory
 from src.models import OHLC, EMACStrategy
 from src.tools import round_decimals_down
 
@@ -16,19 +16,6 @@ logging.basicConfig(
 )
 
 log = logging.getLogger(__name__)
-
-
-def exchange_factory(exchange: str):
-    """Factory for Exchange classes."""
-    if exchange.lower() == "dydx":
-        return dYdXExchange()
-    if exchange.lower() == "alpaca":
-        return AlpacaExchange()
-    # if exchange.lower() == "interactive-brokers":
-    #     return IBExchange()
-
-    log.error(f"Exchange '{exchange}' currently not recognised.")
-    return None
 
 
 class Position:
@@ -44,7 +31,7 @@ class Position:
     ):
         """Insert exchange upon creation."""
         self.symbol = symbol
-        self.exchange = exchange_factory(exchange)
+        self.exchange = ExchangeFactory.create_exchange(exchange)
         self.base_currency = base_currency
         self.quote_currency = quote_currency
         self.sub_weight = sub_weight

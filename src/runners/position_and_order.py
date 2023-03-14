@@ -1,10 +1,11 @@
-"""Main runner for crypto strategy and ordering."""
+"""Runner for positioning and ordering."""
 import logging
 import os
 import sys
 from textwrap import dedent
 
-from src.position import Position, exchange_factory
+from src.position import Position
+from src.exchange_factory import ExchangeFactory
 from src import telegram_bot as tg
 from src.db_utils import get_portfolio
 from src.time_checker import time_check, exchange_open_check
@@ -46,7 +47,7 @@ def main():
 
         if position.decision:
             # Execute Order
-            exc = exchange_factory(instrument.exchange)
+            exc = ExchangeFactory.create_exchange(instrument.exchange)
             exc.order(instrument.symbol, position.side, position.quantity)
 
             # Telegram Message
