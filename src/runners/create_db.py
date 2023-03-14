@@ -18,17 +18,18 @@ log = logging.getLogger(__name__)
 def populate_instruments():
     """Populate 'instruments' table."""
     instruments = [
-        # Instrument(
-        #     symbol="BTCUSD",
-        #     base_currency="BTC",
-        #     quote_currency="USD",
-        #     exchange="dydx",
-        #     ohlc_data_source="crypto-compare",
-        #     vehicle="crypto",
-        #     time_zone="Europe/London",
-        #     order_time=dt.time(7, 0),
-        #     forecast_time=dt.time(6, 0),
-        # ),
+        Instrument(
+            symbol="BTCUSD",
+            base_currency="BTC",
+            quote_currency="USD",
+            exchange="dydx",
+            exchange_iso="",  # Crypto doesn't need exchange_iso
+            ohlc_data_source="crypto-compare",
+            vehicle="crypto",
+            time_zone="Europe/London",
+            order_time=dt.time(7, 0),
+            forecast_time=dt.time(6, 0),
+        ),
         Instrument(
             # Nvidia
             symbol="NVDA",

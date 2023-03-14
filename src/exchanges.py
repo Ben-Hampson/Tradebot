@@ -111,7 +111,7 @@ class AlpacaExchange(Exchange):
             asset = next(asset for asset in self.all_positions if asset.symbol == symbol)
         except StopIteration:
             asset = {"qty": 0}
-        return int(asset["qty"])  # TODO: Can it be a float?
+        return int(float(asset.qty))  # TODO: Can it be a float?
 
     @property
     def total_equity(self) -> float:

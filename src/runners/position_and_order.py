@@ -20,7 +20,6 @@ def main():
     """Get portfolio. Position and execute order if necessary."""
     log.info("Trading Mode: %s", os.getenv("TRADING_MODE", "PAPER"))
 
-    # Portfolio
     portfolio = get_portfolio()
 
     if not portfolio:

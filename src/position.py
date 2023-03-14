@@ -20,12 +20,12 @@ log = logging.getLogger(__name__)
 
 def exchange_factory(exchange: str):
     """Factory for Exchange classes."""
-    # if exchange.lower() == "dydx":
-    #     return dYdXExchange()
-    # if exchange.lower() == "interactive-brokers":
-    #     return IBExchange()
+    if exchange.lower() == "dydx":
+        return dYdXExchange()
     if exchange.lower() == "alpaca":
         return AlpacaExchange()
+    # if exchange.lower() == "interactive-brokers":
+    #     return IBExchange()
 
     log.error(f"Exchange '{exchange}' currently not recognised.")
     return None
