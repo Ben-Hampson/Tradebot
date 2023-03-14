@@ -67,9 +67,9 @@ class AlpacaExchange(Exchange):
         bar = self.shdc.get_stock_latest_bar(request)  # Latest minute bar
         return round(float(bar[symbol].close), 2)
 
-    def get_symbol(self, symbol: str) -> str:
+    def get_symbol(self, base_currency: str, quote_currency: str) -> str:
         """Create symbol used by the Alpaca Exchange API."""
-        return ""
+        return None
 
     def order(
         self,

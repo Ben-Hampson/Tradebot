@@ -33,8 +33,10 @@ class Exchange(ABC):
         pass
 
     @abstractmethod
-    def get_symbol(self, symbol: str) -> str:
-        """Create symbol used by dYdX API."""
+    def get_symbol(self, base_currency: str, quote_currency: str) -> str:
+        """Return symbol in the format used by the exchange's API.
+        
+        e.g. dYdX wants 'BTC-USD'."""
         pass
 
     @abstractmethod

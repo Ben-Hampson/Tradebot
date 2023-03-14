@@ -1,4 +1,5 @@
 # --- Files I want to .gitignore ---
+dydx-env/
 
 # --- Don't upload the secret sauce! ---
 app/env

@@ -62,14 +62,14 @@ class dYdXExchange(Exchange):
         """Get all positions."""
         return self.account().data["account"]["openPositions"]
 
-    def get_position(self, base_currency: str, quote_currency: str) -> float:
+    def get_position(self, symbol: str) -> float:
         """Get the current position for a specific instrument.
 
         Return the amount of the token. e.g. 0.01 ETH.
         Positive means the position is long. Negative means it's short.
         """
         all_positions = self.all_positions
-        symbol = self.get_symbol(base_currency, quote_currency)
+
         try:
             return float(all_positions[symbol]["size"])
         except KeyError:
@@ -80,13 +80,12 @@ class dYdXExchange(Exchange):
         """Get the total equity on the account."""
         return float(self.account().data["account"]["equity"])
 
-    def get_current_price(self, base_currency: str, quote_currency: str):
+    def get_current_price(self, symbol: str):
         """Get the value of one unit of this instrument on the exchange.
 
         dYdX returns a human readable value. e.g. 1 BTC = $x instead of
         0.00000001 BTC = $x. Price is in USD.
         """
-        symbol = self.get_symbol(base_currency, quote_currency)
         market = self.client.public.get_markets(symbol)
 
         price = market.data["markets"]["BTC-USD"]["indexPrice"]
@@ -115,10 +114,10 @@ class dYdXExchange(Exchange):
         else:
             log.error(f"Side must be 'BUY' or 'SELL'. Side: '{side}'.")
             return None
-
-        current_price = self.get_current_price(base_currency, quote_currency)
+        
+        symbol = self.symbol(base_currency, quote_currency)
+        current_price = self.get_current_price(symbol)
         price = price = str(int(current_price * slippage))
-        symbol = self.get_symbol(base_currency, quote_currency)
 
         order = self.client.private.create_order(
             position_id=self.position_id,
@@ -142,5 +141,5 @@ class dYdXExchange(Exchange):
 if __name__ == '__main__':
     exchange = dYdXExchange()
     pos = exchange.all_positions
-    quote = exchange.get_current_price("BTC", "USD")
+    quote = exchange.get_current_price("BTCUSD")
     print(quote)

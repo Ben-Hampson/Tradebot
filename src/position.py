@@ -30,8 +30,11 @@ class Position:
         sub_weight: Union[float, int],
     ):
         """Insert exchange upon creation."""
-        self.symbol = symbol
         self.exchange = ExchangeFactory.create_exchange(exchange)
+        self.db_symbol = symbol if symbol else base_currency + quote_currency  # Symbol used in database
+        self.exchange_symbol = self.exchange.get_symbol(base_currency, quote_currency)
+        if self.exchange_symbol is None: # AlpacaExchange returns None to force this
+            self.exchange_symbol = self.db_symbol
         self.base_currency = base_currency
         self.quote_currency = quote_currency
         self.sub_weight = sub_weight
@@ -70,12 +73,12 @@ class Position:
     @cached_property
     def position(self):
         """Get the current position (quantity of the instrument) for this instrument on the exchange."""
-        return self.exchange.get_position(self.symbol)
+        return self.exchange.get_position(self.exchange_symbol)
 
     @cached_property
     def price(self):
         """Get the current price for this instrument from the exchange."""
-        return self.exchange.get_current_price(self.symbol)
+        return self.exchange.get_current_price(self.exchange_symbol)
 
     @cached_property
     def latest_record(self) -> dict:
@@ -89,7 +92,7 @@ class Position:
                     EMACStrategy.forecast,
                     EMACStrategy.instrument_risk,
                 )
-                .where(OHLC.symbol == self.symbol)
+                .where(OHLC.symbol == self.db_symbol)
                 .join(EMACStrategy)
                 .order_by(OHLC.date.desc())
             )
