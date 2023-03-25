@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 def position_and_order(instrument: Instrument, sub_weight: float):
     """Get portfolio. Position and execute order if necessary."""
-    log.info("Trading Mode: %s", os.getenv("TRADING_MODE", "PAPER"))
+    log.info("Trading Mode: %s", os.getenv("TRADING_MODE"))
 
     position = Position(
         instrument.symbol,
@@ -42,7 +42,16 @@ def position_and_order(instrument: Instrument, sub_weight: float):
         # Execute Order
         exc = ExchangeFactory.create_exchange(instrument.exchange)
         exc_symbol = exc.get_symbol(instrument.base_currency, instrument.quote_currency)
-        exc.order(exc_symbol, position.side, position.quantity)
+        try:
+            exc.order(exc_symbol, position.side, position.quantity)
+        except Exception:
+            log.exception("%s: Exception while making order.", instrument.symbol)
+            message = f"""\
+            *{instrument.symbol}*
+            
+            Error while making order."""
+            tg.outbound(dedent(message))
+            return None
 
         # Telegram Message
         message = f"""\

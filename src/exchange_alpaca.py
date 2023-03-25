@@ -6,6 +6,7 @@ from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockLatestQuoteRequest
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import TimeInForce
+from alpaca.common.exceptions import APIError
 
 from src.exchange import Exchange
 
@@ -22,14 +23,14 @@ class AlpacaExchange(Exchange):
     def __init__(self):
         """Initialise AlpacaExchange object."""
 
-        if os.getenv("PAPER_TRADING", 1):
-            PAPER = True
-            ALPACA_KEY_ID = os.getenv("ALPACA_PAPER_KEY_ID")
-            ALPACA_SECRET_KEY = os.getenv("ALPACA_PAPER_SECRET_KEY")
-        else:
+        if os.getenv("TRADING_MODE") == "LIVE":
             PAPER = False
             ALPACA_KEY_ID = os.getenv("ALPACA_LIVE_KEY_ID")
             ALPACA_SECRET_KEY = os.getenv("ALPACA_LIVE_SECRET_KEY")
+        else:
+            PAPER = True
+            ALPACA_KEY_ID = os.getenv("ALPACA_PAPER_KEY_ID")
+            ALPACA_SECRET_KEY = os.getenv("ALPACA_PAPER_SECRET_KEY")
 
         self.tc = TradingClient(ALPACA_KEY_ID, ALPACA_SECRET_KEY, paper=PAPER)
         self.shdc = StockHistoricalDataClient(ALPACA_KEY_ID, ALPACA_SECRET_KEY)
@@ -50,8 +51,8 @@ class AlpacaExchange(Exchange):
                 asset for asset in self.all_positions if asset.symbol == symbol
             )
         except StopIteration:
-            asset = {"qty": 0}
-        return int(float(asset.qty))  # TODO: Can it be a float?
+            return 0
+        return int(float(asset.qty))
 
     @property
     def total_equity(self) -> float:
@@ -85,7 +86,11 @@ class AlpacaExchange(Exchange):
             side=side.lower(),
             time_in_force=TimeInForce.DAY,
         )
-        market_order = self.tc.submit_order(market_order_data)
+        try:
+            market_order = self.tc.submit_order(market_order_data)
+        except APIError:
+            log.exception("%s order failed.", symbol)
+            raise
 
         return market_order
 
