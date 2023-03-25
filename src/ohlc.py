@@ -265,12 +265,14 @@ class AlpacaOHLC(OHLCUpdater):
             # Get date for >1 day
             start = latest_ohlc.date + dt.timedelta(1)
             end = dt.datetime.now() - dt.timedelta(minutes=20)
-        # If yesterday the exchange was closed, return None
 
         self.get_ohlc_data(start, end)
 
         if hasattr(self, "df"):
             self.insert_ohlc_data()
+            log.info("%s: Data inserted.", self.symbol)
+        else:
+            log.info("%s: Already up to date.", self.symbol)
 
     def get_ohlc_data(self, start_date: dt.datetime, end_date: dt.datetime) -> None:
         """Get OHLC data for an Instrument between two dates.
@@ -292,7 +294,13 @@ class AlpacaOHLC(OHLCUpdater):
                         end=end_date
                         )
 
-        bars = self.shdc.get_stock_bars(request_params)
+        try:
+            bars = self.shdc.get_stock_bars(request_params)
+        except AttributeError:
+            log.info("%s: Alpaca exchange returned no data. Probably because there's more data to add.", self.symbol)
+            log.debug(request_params)
+            return None
+
         df = bars.df.reset_index()
         df['date'] = [x.to_pydatetime() for x in df.timestamp]
         df['symbol_date'] = df['symbol'] + ' ' + df.timestamp.dt.strftime('%Y-%m-%d')
