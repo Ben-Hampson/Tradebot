@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 class Position:
     """Object to use forecast and current position to decide whether to change position."""
-    
+
     def __init__(
         self,
         symbol: str,
@@ -31,9 +31,11 @@ class Position:
     ):
         """Insert exchange upon creation."""
         self.exchange = ExchangeFactory.create_exchange(exchange)
-        self.db_symbol = symbol if symbol else base_currency + quote_currency  # Symbol used in database
+        self.db_symbol = (
+            symbol if symbol else base_currency + quote_currency
+        )  # Symbol used in database
         self.exchange_symbol = self.exchange.get_symbol(base_currency, quote_currency)
-        if self.exchange_symbol is None: # AlpacaExchange returns None to force this
+        if self.exchange_symbol is None:  # AlpacaExchange returns None to force this
             self.exchange_symbol = self.db_symbol
         self.base_currency = base_currency
         self.quote_currency = quote_currency

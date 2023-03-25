@@ -1,22 +1,21 @@
 """Logic for getting OHLC and adding it to the database."""
 
-from abc import ABC
 import datetime as dt
 import logging
 import os
+from abc import ABC
 from typing import Optional
 
 import numpy as np
 import requests
-from sqlmodel import Session
-
-from src.db_utils import engine, get_instrument, get_latest_record
-from src.time_checker import time_check
-from src.models import OHLC
 from alpaca.data import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
+from sqlmodel import Session
 
+from src.db_utils import engine, get_instrument, get_latest_record
+from src.models import OHLC
+from src.time_checker import time_check
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ class OHLCUpdater(ABC):
             If None, will get data from the earliest possible date.
         """
         pass
-    
+
     def update_ohlc_data(self) -> None:
         """Main runner. Bring OHLC data in OHLC table up to date."""
 
@@ -43,7 +42,7 @@ class OHLCUpdater(ABC):
         """Get OHLC data for an Instrument between two dates.
 
         Inclusive of the start date and end date.
-        
+
         end_date: The latest date to get data for (inclusive?). Defaults to None.
             If None, will get data up to the latest possible date.
         start_date: The earliest date to get data for (inclusive?). Defaults to None.
@@ -53,6 +52,7 @@ class OHLCUpdater(ABC):
     def insert_ohlc_data(self) -> None:
         """Insert OHLC data into 'ohlc' table."""
         pass
+
 
 class CryptoCompareOHLC(OHLCUpdater):
     """Class to get OHLC data from CryptoCompare and add it to the database."""
@@ -235,16 +235,15 @@ class CryptoCompareOHLC(OHLCUpdater):
 class AlpacaOHLC(OHLCUpdater):
     """Get OHLC data from Alpaca."""
 
-    def __init__(
-        self,
-        symbol: str
-    ):
+    def __init__(self, symbol: str):
         """Initialiser.
 
         Args:
         symbol: Instrument symbol e.g. BTCUSD.
         """
-        self.shdc = StockHistoricalDataClient(os.getenv("ALPACA_LIVE_KEY_ID"), os.getenv("ALPACA_LIVE_SECRET_KEY"))
+        self.shdc = StockHistoricalDataClient(
+            os.getenv("ALPACA_LIVE_KEY_ID"), os.getenv("ALPACA_LIVE_SECRET_KEY")
+        )
         self.symbol = symbol
 
     def update_ohlc_data(self) -> None:
@@ -252,7 +251,7 @@ class AlpacaOHLC(OHLCUpdater):
         latest_ohlc = get_latest_record(self.symbol, OHLC)
 
         if not latest_ohlc:
-            start = dt.datetime(2000,1,1)
+            start = dt.datetime(2000, 1, 1)
             end = dt.datetime.now() - dt.timedelta(minutes=20)
         elif latest_ohlc.date.date() == dt.date.today():
             log.info(f"{self.symbol} data is already up to date. No records added.")
@@ -278,7 +277,7 @@ class AlpacaOHLC(OHLCUpdater):
         """Get OHLC data for an Instrument between two dates.
 
         Inclusive of the start date and end date.
-        
+
         end_date: The latest date to get data for (inclusive?). Defaults to None.
             If None, will get data up to the latest possible date.
         start_date: The earliest date to get data for (inclusive?). Defaults to None.
@@ -288,24 +287,29 @@ class AlpacaOHLC(OHLCUpdater):
                 return None
 
         request_params = StockBarsRequest(
-                        symbol_or_symbols=self.symbol,
-                        timeframe=TimeFrame.Day,
-                        start=start_date,
-                        end=end_date
-                        )
+            symbol_or_symbols=self.symbol,
+            timeframe=TimeFrame.Day,
+            start=start_date,
+            end=end_date,
+        )
 
         try:
             bars = self.shdc.get_stock_bars(request_params)
         except AttributeError:
-            log.info("%s: Alpaca exchange returned no data. Probably because there's more data to add.", self.symbol)
+            log.info(
+                "%s: Alpaca exchange returned no data. Probably because there's more data to add.",
+                self.symbol,
+            )
             log.debug(request_params)
             return None
 
         df = bars.df.reset_index()
-        df['date'] = [x.to_pydatetime() for x in df.timestamp]
-        df['symbol_date'] = df['symbol'] + ' ' + df.timestamp.dt.strftime('%Y-%m-%d')
+        df["date"] = [x.to_pydatetime() for x in df.timestamp]
+        df["symbol_date"] = df["symbol"] + " " + df.timestamp.dt.strftime("%Y-%m-%d")
 
-        self.df = df[['symbol_date', 'symbol', 'date', 'open', 'high', 'low', 'close', 'volume']]
+        self.df = df[
+            ["symbol_date", "symbol", "date", "open", "high", "low", "close", "volume"]
+        ]
 
     def insert_ohlc_data(self) -> None:
         """Insert OHLC data into 'ohlc' table."""

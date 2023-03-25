@@ -51,7 +51,7 @@ def main():
 
         # TODO: This strat_missing is a mess
         strat_missing = strat_outdated = not bool(latest_ohlc_strat)
-        
+
         if not strat_missing:
             strat_missing = any(
                 [
@@ -59,7 +59,7 @@ def main():
                     not bool(latest_ohlc_strat.instrument_risk),
                 ]
             )
-        
+
         if not strat_missing:
             strat_outdated = latest_ohlc.date > latest_strat.date
 

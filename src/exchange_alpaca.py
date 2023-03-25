@@ -1,12 +1,12 @@
 import logging
 import os
 
-from alpaca.trading.client import TradingClient
+from alpaca.common.exceptions import APIError
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockLatestQuoteRequest
-from alpaca.trading.requests import MarketOrderRequest
+from alpaca.trading.client import TradingClient
 from alpaca.trading.enums import TimeInForce
-from alpaca.common.exceptions import APIError
+from alpaca.trading.requests import MarketOrderRequest
 
 from src.exchange import Exchange
 

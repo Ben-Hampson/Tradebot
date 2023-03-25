@@ -17,11 +17,13 @@ bot = telegram.Bot(token=os.getenv("TELEGRAM_TOKEN"))
 updater = Updater(token=os.getenv("TELEGRAM_TOKEN"), use_context=True)
 dispatcher = updater.dispatcher
 
+
 def start(update, context):
     """For command '/start', return a message."""
     context.bot.send_message(
         chat_id=update.effective_chat.id, text="Hello, I am tradebot!"
     )
+
 
 def formatter(text: str) -> str:
     """Format messages to make sure they don't cause an error."""

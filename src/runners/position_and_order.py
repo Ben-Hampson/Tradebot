@@ -1,16 +1,16 @@
 """Runner for positioning and ordering."""
+import argparse
 import logging
 import os
 import sys
 from textwrap import dedent
-import argparse
 
-from src.position import Position
+from src import telegram_bot as tg
+from src.db_utils import get_instrument, get_portfolio
 from src.exchange_factory import ExchangeFactory
 from src.models import Instrument
-from src import telegram_bot as tg
-from src.db_utils import get_portfolio, get_instrument
-from src.time_checker import time_check, exchange_open_check
+from src.position import Position
+from src.time_checker import exchange_open_check, time_check
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -32,7 +32,9 @@ def position_and_order(instrument: Instrument, sub_weight: float):
     )
 
     if os.getenv("TIME_CHECKER") == "1":
-        if not time_check(instrument.symbol, "order") and exchange_open_check(instrument.symbol):
+        if not time_check(instrument.symbol, "order") and exchange_open_check(
+            instrument.symbol
+        ):
             return None
 
     # Calculate Desired Position
@@ -78,17 +80,18 @@ def run_whole_portfolio():
         sys.exit()
 
     sub_weight = 1 / len(portfolio)
-    
+
     for instrument in portfolio:
         position_and_order(instrument, sub_weight)
 
     log.info("Finished.")
 
+
 def run_one_instrument(symbol: str, sub_weight: float):
     """Position and order for one instrument."""
 
     instrument = get_instrument(symbol)
-    
+
     position_and_order(instrument, sub_weight)
 
 

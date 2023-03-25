@@ -3,7 +3,7 @@ import logging
 import os
 
 from src.db_utils import get_instrument, get_portfolio
-from src.ohlc import OHLCUpdaterFactory, AlpacaOHLC
+from src.ohlc import AlpacaOHLC, OHLCUpdaterFactory
 from src.time_checker import time_check
 
 log = logging.getLogger(__name__)
@@ -16,7 +16,9 @@ def update_one(symbol: str):
         symbol: Ticker symbol.
     """
     instrument = get_instrument(symbol)
-    ohlc_updater = OHLCUpdaterFactory.create_updater(instrument.ohlc_data_source, symbol)
+    ohlc_updater = OHLCUpdaterFactory.create_updater(
+        instrument.ohlc_data_source, symbol
+    )
     ohlc_updater.update_ohlc_data()
 
 

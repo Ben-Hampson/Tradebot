@@ -9,8 +9,6 @@ import logging
 import os
 import time
 
-from src.exchange import Exchange
-
 from dydx3 import Client
 from dydx3.constants import (
     API_HOST_MAINNET,
@@ -20,6 +18,7 @@ from dydx3.constants import (
 )
 from web3 import Web3
 
+from src.exchange import Exchange
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -113,7 +112,7 @@ class dYdXExchange(Exchange):
         else:
             log.error(f"Side must be 'BUY' or 'SELL'. Side: '{side}'.")
             return None
-        
+
         current_price = self.get_current_price(symbol)
         price = price = str(int(current_price * slippage))
 
@@ -136,7 +135,8 @@ class dYdXExchange(Exchange):
 
         return order.data["order"]
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     exchange = dYdXExchange()
     pos = exchange.all_positions
     quote = exchange.get_current_price("BTCUSD")

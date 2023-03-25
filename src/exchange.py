@@ -1,6 +1,7 @@
 """Exchanges where one can buy, sell, and check positions."""
 from abc import ABC, abstractmethod
 
+
 class Exchange(ABC):
     """Abstract Base Class for exchanges."""
 
@@ -35,7 +36,7 @@ class Exchange(ABC):
     @abstractmethod
     def get_symbol(self, base_currency: str, quote_currency: str) -> str:
         """Return symbol in the format used by the exchange's API.
-        
+
         e.g. dYdX wants 'BTC-USD'."""
         pass
 

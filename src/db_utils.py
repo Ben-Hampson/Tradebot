@@ -1,8 +1,8 @@
 """Database utilities."""
 
 import logging
-from pathlib import Path
 import os
+from pathlib import Path
 
 from sqlmodel import Session, SQLModel, create_engine, select
 

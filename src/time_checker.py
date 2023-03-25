@@ -73,7 +73,7 @@ def exchange_open_check(symbol: str) -> bool:
 
     exchange = inst.exchange_iso
     time_zone = inst.time_zone
-    now = pd.Timestamp.today(tz=time_zone).floor('min')
+    now = pd.Timestamp.today(tz=time_zone).floor("min")
 
     if exchange:
         calendar = ecals.get_calendar(exchange)
