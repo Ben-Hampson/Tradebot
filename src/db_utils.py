@@ -15,7 +15,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 path = Path(__file__).parent.parent
-db_file = os.getenv("DB_FILE", "data_test.db")
+db_file = os.getenv("DB_FILE", "data.db")
 APP_DB = path.joinpath(f"data/{db_file}")
 
 engine = create_engine(f"sqlite:///{APP_DB}")
