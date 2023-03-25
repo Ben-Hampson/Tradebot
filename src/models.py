@@ -8,9 +8,11 @@ from sqlmodel import Field, SQLModel
 
 class Instrument(SQLModel, table=True):
     symbol: str = Field(default=None, primary_key=True)
-    base_currency: str
+    base_currency: str = Field(nullable=True)
     quote_currency: str
     exchange: str
+    exchange_iso: str
+    ohlc_data_source: str
     vehicle: str
     time_zone: str
     order_time: time
@@ -18,6 +20,7 @@ class Instrument(SQLModel, table=True):
 
 
 class OHLC(SQLModel, table=True):
+    # Multi-Index symbol and date?
     symbol_date: str = Field(default=None, primary_key=True)
     symbol: str = Field(foreign_key="instrument.symbol")
     date: datetime = Field(default=None)
@@ -25,6 +28,7 @@ class OHLC(SQLModel, table=True):
     high: float
     low: float
     close: float
+    volume: float = Field(nullable=True)
 
 
 class EMACStrategy(SQLModel, table=True):

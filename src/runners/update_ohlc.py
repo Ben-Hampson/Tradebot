@@ -1,9 +1,9 @@
 """Runner to update OHLC data in database."""
 import logging
-from typing import Optional
+import os
 
 from src.db_utils import get_instrument, get_portfolio
-from src.ohlc import OHLCUpdater
+from src.ohlc import AlpacaOHLC, OHLCUpdaterFactory
 from src.time_checker import time_check
 
 log = logging.getLogger(__name__)
@@ -16,8 +16,10 @@ def update_one(symbol: str):
         symbol: Ticker symbol.
     """
     instrument = get_instrument(symbol)
-    ohlc_data = OHLCUpdater(instrument.symbol)
-    ohlc_data.update_ohlc_data()
+    ohlc_updater = OHLCUpdaterFactory.create_updater(
+        instrument.ohlc_data_source, symbol
+    )
+    ohlc_updater.update_ohlc_data()
 
 
 def main():
@@ -28,11 +30,11 @@ def main():
     # If the forecast_time is inbetween, it will lack OHLC data and a forecast cannot be made.
     portfolio = get_portfolio()
     for instrument in portfolio:
-        # TODO: os.getenv() If dev, ignore time_check.
-        if time_check(instrument.symbol, "forecast"):
-            pass
-        else:
-            return
+        if os.getenv("TIME_CHECKER") == "1":
+            if time_check(instrument.symbol, "forecast"):
+                pass
+            else:
+                return
 
         update_one(instrument.symbol)
 

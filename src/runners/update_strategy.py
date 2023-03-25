@@ -1,8 +1,7 @@
 """Run strategy calculations and add them to the database."""
 
-import datetime as dt
 import logging
-from typing import Optional
+import os
 
 from src import db_utils
 from src import telegram_bot as tg
@@ -41,30 +40,34 @@ def main():
     """Populate the EMACStrategy table from scratch or update it, depending on its status."""
     for instrument in get_portfolio():
         # Check if forecast_time was in the last 15 minutes.
-        # TODO: os.getenv() If dev, ignore time_check.
-        if time_check(instrument.symbol, "forecast"):
-            pass
-        else:
-            continue
+        if os.getenv("TIME_CHECKER") == "1":
+            if not time_check(instrument.symbol, "forecast"):
+                continue
 
         latest_ohlc = db_utils.get_latest_record(instrument.symbol, OHLC)
         latest_strat = db_utils.get_latest_record(instrument.symbol, EMACStrategy)
 
         latest_ohlc_strat = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
 
-        strat_outdated = latest_ohlc.date > latest_strat.date
-        strat_missing = any(
-            [
-                not bool(latest_ohlc_strat.forecast),
-                not bool(latest_ohlc_strat.instrument_risk),
-            ]
-        )
+        # TODO: This strat_missing is a mess
+        strat_missing = strat_outdated = not bool(latest_ohlc_strat)
+
+        if not strat_missing:
+            strat_missing = any(
+                [
+                    not bool(latest_ohlc_strat.forecast),
+                    not bool(latest_ohlc_strat.instrument_risk),
+                ]
+            )
+
+        if not strat_missing:
+            strat_outdated = latest_ohlc.date > latest_strat.date
 
         if strat_outdated or strat_missing:
             update_one(instrument.symbol)
             log.info(f"{instrument.symbol}: Strategy updated.")
-            latest = db_utils.get_latest_ohlc_strat_record
-            tg_message += f"\n{instrument.symbol} Forecast Updated.\n\nInstrument Risk: {latest.instrument_risk}\nForecast: {latest.forecast}"
+            latest = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
+            tg_message = f"\n{instrument.symbol} Forecast Updated.\n\nInstrument Risk: {latest.instrument_risk}\nForecast: {latest.forecast}"
             tg.outbound(tg_message)
         else:
             log.info(f"{instrument.symbol}: Strategy already up to date.")

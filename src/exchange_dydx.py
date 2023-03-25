@@ -1,4 +1,10 @@
-"""DyDx Exchange class and methods."""
+"""dYdX Exchanbe class, based on Exchange ABC."""
+# Can't add dydx-v3-python to poetry because:
+#  - dydx-v3-python depends on web3 >=5.0.0,<6.0.0 depends on websockets (>=7.0.0,<8.0.0
+#  - alpaca-py depends on websockets (>=10.2,<11.0)
+#
+# source dydx-env/bin/activate
+
 import logging
 import os
 import time
@@ -12,6 +18,8 @@ from dydx3.constants import (
 )
 from web3 import Web3
 
+from src.exchange import Exchange
+
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
@@ -19,7 +27,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-class dYdXExchange:
+class dYdXExchange(Exchange):
     """dYdX exchange API wrapper."""
 
     def __init__(self):
@@ -27,7 +35,11 @@ class dYdXExchange:
         STARK_PRIVATE_KEY = hex(int("0x" + os.getenv("STARK_PRIVATE_KEY"), base=16))
         WEB3_PROVIDER_URL = "https://rpc.ankr.com/eth"
 
-        # TODO: if os.getenv("ENVIRONMENT") == "TESTING", paper trade.
+        # if os.getenv("PAPER_TRADING", 1):
+        #     # TODO: Figure out how to paper trade in dYdX.
+        #     log.info("PAPER TRADING")
+        #     quit()
+
         self.client = Client(
             network_id=NETWORK_ID_MAINNET,
             host=API_HOST_MAINNET,
@@ -49,14 +61,14 @@ class dYdXExchange:
         """Get all positions."""
         return self.account().data["account"]["openPositions"]
 
-    def get_position(self, base_currency: str, quote_currency: str) -> float:
+    def get_position(self, symbol: str) -> float:
         """Get the current position for a specific instrument.
 
         Return the amount of the token. e.g. 0.01 ETH.
         Positive means the position is long. Negative means it's short.
         """
         all_positions = self.all_positions
-        symbol = self.get_symbol(base_currency, quote_currency)
+
         try:
             return float(all_positions[symbol]["size"])
         except KeyError:
@@ -67,13 +79,12 @@ class dYdXExchange:
         """Get the total equity on the account."""
         return float(self.account().data["account"]["equity"])
 
-    def get_current_price(self, base_currency: str, quote_currency: str):
+    def get_current_price(self, symbol: str):
         """Get the value of one unit of this instrument on the exchange.
 
         dYdX returns a human readable value. e.g. 1 BTC = $x instead of
         0.00000001 BTC = $x. Price is in USD.
         """
-        symbol = self.get_symbol(base_currency, quote_currency)
         market = self.client.public.get_markets(symbol)
 
         price = market.data["markets"]["BTC-USD"]["indexPrice"]
@@ -85,8 +96,7 @@ class dYdXExchange:
 
     def order(
         self,
-        base_currency: str,
-        quote_currency: str,
+        symbol: str,
         side: str,
         quantity: float,
         order_type: str = "MARKET",
@@ -103,9 +113,8 @@ class dYdXExchange:
             log.error(f"Side must be 'BUY' or 'SELL'. Side: '{side}'.")
             return None
 
-        current_price = self.get_current_price(base_currency, quote_currency)
+        current_price = self.get_current_price(symbol)
         price = price = str(int(current_price * slippage))
-        symbol = self.get_symbol(base_currency, quote_currency)
 
         order = self.client.private.create_order(
             position_id=self.position_id,
@@ -125,3 +134,10 @@ class dYdXExchange:
         # This method: Take optional cancelId
 
         return order.data["order"]
+
+
+if __name__ == "__main__":
+    exchange = dYdXExchange()
+    pos = exchange.all_positions
+    quote = exchange.get_current_price("BTCUSD")
+    print(quote)

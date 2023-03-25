@@ -7,7 +7,7 @@ from forex_python.converter import CurrencyCodes, CurrencyRates
 from sqlmodel import Session, select
 
 from src.db_utils import engine
-from src.dydx_exchange import dYdXExchange
+from src.exchange_factory import ExchangeFactory
 from src.models import OHLC, EMACStrategy
 from src.tools import round_decimals_down
 
@@ -18,19 +18,9 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def exchange_factory(exchange: str):
-    """Factory for Exchange classes."""
-    if exchange.lower() == "dydx":
-        return dYdXExchange()
-    if exchange.lower() == "stock":
-        log.error("Stock exchange not implemented yet.")
-        return None
+class Position:
+    """Object to use forecast and current position to decide whether to change position."""
 
-    log.error(f"Exchange '{exchange}' currently not recognised.")
-    return None
-
-
-class Instrument:
     def __init__(
         self,
         symbol: str,
@@ -40,8 +30,13 @@ class Instrument:
         sub_weight: Union[float, int],
     ):
         """Insert exchange upon creation."""
-        self.symbol = symbol
-        self.exchange = exchange_factory(exchange)
+        self.exchange = ExchangeFactory.create_exchange(exchange)
+        self.db_symbol = (
+            symbol if symbol else base_currency + quote_currency
+        )  # Symbol used in database
+        self.exchange_symbol = self.exchange.get_symbol(base_currency, quote_currency)
+        if self.exchange_symbol is None:  # AlpacaExchange returns None to force this
+            self.exchange_symbol = self.db_symbol
         self.base_currency = base_currency
         self.quote_currency = quote_currency
         self.sub_weight = sub_weight
@@ -80,12 +75,12 @@ class Instrument:
     @cached_property
     def position(self):
         """Get the current position (quantity of the instrument) for this instrument on the exchange."""
-        return self.exchange.get_position(self.base_currency, self.quote_currency)
+        return self.exchange.get_position(self.exchange_symbol)
 
     @cached_property
     def price(self):
         """Get the current price for this instrument from the exchange."""
-        return self.exchange.get_current_price(self.base_currency, self.quote_currency)
+        return self.exchange.get_current_price(self.exchange_symbol)
 
     @cached_property
     def latest_record(self) -> dict:
@@ -99,7 +94,7 @@ class Instrument:
                     EMACStrategy.forecast,
                     EMACStrategy.instrument_risk,
                 )
-                .where(OHLC.symbol == self.symbol)
+                .where(OHLC.symbol == self.db_symbol)
                 .join(EMACStrategy)
                 .order_by(OHLC.date.desc())
             )
@@ -194,21 +189,3 @@ class Instrument:
             log.info(f"No change.")
 
         return (self.decision, self.side, self.quantity)
-
-    def order(self):
-        """Creates an order on the exchange for this instrument.
-
-        First, check that an affirmative decision was made.
-        """
-        if not self.decision:
-            print("Decision was to NOT trade. Will not order.")
-
-        trading_mode = os.getenv("TRADING_MODE")
-        if trading_mode == "LIVE":
-            log.info("Trading Mode: Live")
-            self.exchange.order(
-                self.base_currency, self.quote_currency, self.side, self.quantity
-            )
-        else:
-            log.info("Trading Mode: Paper")
-            log.info("Not making order.")

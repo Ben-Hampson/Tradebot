@@ -54,6 +54,16 @@ COPY src/ ./src
 RUN mkdir -p /home/data \
     && mkdir -p /home/logs
 
+# Setup dydx-env
+COPY dydx-env-requirements.txt ./
+RUN apt update -y && \
+    apt install -y build-essential && \
+    python -m venv dydx-env && \
+    chmod +x ./dydx-env/bin/activate && \
+    . dydx-env/bin/activate && \
+    pip install -U pip && \
+    pip install -r dydx-env-requirements.txt
+
 # Cron
 RUN apt-get -qq update -y && apt-get -qq install -y cron
 COPY root /etc/cron.d/root

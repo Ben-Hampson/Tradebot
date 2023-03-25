@@ -1,6 +1,7 @@
 """Database utilities."""
 
 import logging
+import os
 from pathlib import Path
 
 from sqlmodel import Session, SQLModel, create_engine, select
@@ -14,7 +15,8 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 path = Path(__file__).parent.parent
-APP_DB = path.joinpath("data/data.db")  # TODO: Base this on an env variable.
+db_file = os.getenv("DB_FILE", "data.db")
+APP_DB = path.joinpath(f"data/{db_file}")
 
 engine = create_engine(f"sqlite:///{APP_DB}")
 

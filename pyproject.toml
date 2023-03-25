@@ -15,9 +15,10 @@ exchange-calendars = "^3.5"
 forex-python = "^1.8"
 uvicorn = "^0.17.4"
 newtulipy = "^0.4.6"
-dydx-v3-python = "^1.6.1"
 "backports.zoneinfo" = "^0.2.1"
 sqlmodel = "^0.0.6"
+ib-insync = "^0.9.76"
+alpaca-py = "^0.6.1"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3"

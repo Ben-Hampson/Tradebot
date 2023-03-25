@@ -11,6 +11,8 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
+log = logging.getLogger(__name__)
+
 bot = telegram.Bot(token=os.getenv("TELEGRAM_TOKEN"))
 updater = Updater(token=os.getenv("TELEGRAM_TOKEN"), use_context=True)
 dispatcher = updater.dispatcher

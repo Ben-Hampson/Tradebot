@@ -8,7 +8,7 @@ import pandas as pd
 import pytz
 from sqlmodel import Session, select
 
-from src.db_utils import Instrument, engine
+from src.db_utils import Instrument, engine, get_instrument
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -69,13 +69,11 @@ def time_check(symbol: str, checkpoint_type: str) -> bool:
 def exchange_open_check(symbol: str) -> bool:
     """Check if the exchange for the given symbol is open today or not."""
     # Currently unused because we're only trading crypto.
-    with Session(engine) as session:
-        sub_stmt = select(Instrument).where(Instrument.symbol == symbol)
-        sub = session.exec(sub_stmt).one()
+    inst = get_instrument(symbol)
 
-    exchange = sub.exchange_iso
-    time_zone = sub.time_zone
-    now = pd.Timestamp.today(tz=time_zone)
+    exchange = inst.exchange_iso
+    time_zone = inst.time_zone
+    now = pd.Timestamp.today(tz=time_zone).floor("min")
 
     if exchange:
         calendar = ecals.get_calendar(exchange)
