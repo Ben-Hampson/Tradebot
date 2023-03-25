@@ -32,7 +32,7 @@ def position_and_order(instrument: Instrument, sub_weight: float):
     )
 
     if os.getenv("TIME_CHECKER") == "1":
-        if not time_check(instrument.symbol, "order") and exchange_open_check(
+        if not time_check(instrument.symbol, "order") or exchange_open_check(
             instrument.symbol
         ):
             return None
