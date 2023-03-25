@@ -30,7 +30,7 @@ def main():
     # If the forecast_time is inbetween, it will lack OHLC data and a forecast cannot be made.
     portfolio = get_portfolio()
     for instrument in portfolio:
-        if os.getenv("TIME_CHECKER") == 1:
+        if os.getenv("TIME_CHECKER") == "1":
             if time_check(instrument.symbol, "forecast"):
                 pass
             else:

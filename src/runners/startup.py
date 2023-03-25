@@ -2,17 +2,13 @@
 
 import datetime as dt
 import logging
-
-from sqlmodel import Session, select
+import os
 
 from src import telegram_bot as tg
 from src.db_utils import (
-    engine,
-    get_instrument,
     get_latest_ohlc_strat_record,
     get_portfolio,
 )
-from src.models import Instrument
 from src.runners import update_ohlc, update_strategy
 from src.runners.create_db import create_db_and_tables, populate_instruments
 
@@ -45,6 +41,7 @@ def run(symbol: str):
 
 if __name__ == "__main__":
     tg.outbound("Server starting up.")
+    os.environ["TIME_CHECKER"] = "0"
 
     # Create database if it doesn't already exist
     create_db_and_tables()
