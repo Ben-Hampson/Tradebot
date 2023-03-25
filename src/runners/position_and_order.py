@@ -41,7 +41,8 @@ def position_and_order(instrument: Instrument, sub_weight: float):
     if position.decision:
         # Execute Order
         exc = ExchangeFactory.create_exchange(instrument.exchange)
-        exc.order(instrument.symbol, position.side, position.quantity)
+        exc_symbol = exc.get_symbol(instrument.base_currency, instrument.quote_currency)
+        exc.order(exc_symbol, position.side, position.quantity)
 
         # Telegram Message
         message = f"""\

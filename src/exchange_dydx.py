@@ -97,8 +97,7 @@ class dYdXExchange(Exchange):
 
     def order(
         self,
-        base_currency: str,
-        quote_currency: str,
+        symbol: str,
         side: str,
         quantity: float,
         order_type: str = "MARKET",
@@ -115,7 +114,6 @@ class dYdXExchange(Exchange):
             log.error(f"Side must be 'BUY' or 'SELL'. Side: '{side}'.")
             return None
         
-        symbol = self.symbol(base_currency, quote_currency)
         current_price = self.get_current_price(symbol)
         price = price = str(int(current_price * slippage))
 

@@ -69,7 +69,7 @@ class AlpacaExchange(Exchange):
 
     def get_symbol(self, base_currency: str, quote_currency: str) -> str:
         """Create symbol used by the Alpaca Exchange API."""
-        return None
+        return base_currency
 
     def order(
         self,
