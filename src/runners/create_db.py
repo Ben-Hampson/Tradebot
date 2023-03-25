@@ -19,7 +19,7 @@ def instrument_exists(inst: Instrument):
     """Check if Instrument already exists in 'instruments' table."""
     with Session(engine) as session:
         statement = select(Instrument).where(Instrument.symbol == inst.symbol)
-        result = session.exec(statement).one()
+        result = session.exec(statement).one_or_none()
 
     if result:
         log.info(f"{inst.symbol}: Already exists in the Instruments table.")
