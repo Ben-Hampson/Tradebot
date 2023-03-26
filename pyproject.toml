@@ -26,6 +26,7 @@ isort = "^5.10.1"
 pylint = "^2.12.2"
 pytest = "^4.4.1"
 pytest-cov = "^3.0.0"
+pre-commit = "^3.2.1"
 
 [tool.isort]
 profile = "black"

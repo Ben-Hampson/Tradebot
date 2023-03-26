@@ -31,8 +31,12 @@ An overview of the business logic in `/src/`:
 
 ## Next Steps
 There are *many* things I want to improve in the future. To begin with:
-- Refactor the code and use Object-Oriented 
 - Move the Portfolio out of a Python file and into the SQLite database
 - Add tests (`pytest`) and static type checking (`mypy`)
 - Validate data that comes in from the APIs
 - Build a Dashboard using [streamlit](https://streamlit.io/) with charts from [Plotly](https://plotly.com/)
+
+## Using this Repo
+1. `poetry install`
+2. `pre-commit install`
+    - `pre-commit` runs `black` every time you commit.

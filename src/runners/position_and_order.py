@@ -50,7 +50,7 @@ def position_and_order(instrument: Instrument, sub_weight: float):
             log.exception("%s: Exception while making order.", instrument.symbol)
             message = f"""\
             *{instrument.symbol}*
-            
+
             Error while making order."""
             tg.outbound(dedent(message))
             return None
@@ -58,12 +58,12 @@ def position_and_order(instrument: Instrument, sub_weight: float):
         # Telegram Message
         message = f"""\
         *{instrument.symbol}*
-        
+
         {position.side} {position.quantity}"""
     else:
         message = f"""\
         *{instrument.symbol}*
-        
+
         No change."""
 
     tg.outbound(dedent(message))
