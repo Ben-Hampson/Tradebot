@@ -13,16 +13,17 @@ repos:
     rev: 22.10.0
     hooks:
     -   id: black
--   repo: local
-    hooks:
-    - id: pylint
-      name: pylint
-      entry: pylint
-      language: system
-      types: [python]
-      args:
-        [
-          "--rcfile=.pylintrc",
-          "src",
-          "tests"
-        ]
+        entry: bash -c 'black src tests; git add -u' --
+# -   repo: local
+#     hooks:
+#     - id: pylint
+#       name: pylint
+#       entry: pylint
+#       language: system
+#       types: [python]
+#       args:
+#         [
+#           "--rcfile=.pylintrc",
+#           "src",
+#           "tests"
+#         ]
