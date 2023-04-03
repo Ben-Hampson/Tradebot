@@ -1,13 +1,6 @@
 import logging
 import os
 
-from alpaca.common.exceptions import APIError
-from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockLatestQuoteRequest
-from alpaca.trading.client import TradingClient
-from alpaca.trading.enums import TimeInForce
-from alpaca.trading.requests import MarketOrderRequest
-
 from src.exchange import Exchange
 
 logging.basicConfig(
@@ -17,11 +10,11 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-class AlpacaExchange(Exchange):
-    """Alpaca exchange."""
+class IBExchange(Exchange):
+    """Interactive Brokers exchange."""
 
     def __init__(self):
-        """Initialise AlpacaExchange object."""
+        """Initialise InteractiveBrokers object."""
 
         if os.getenv("TRADING_MODE") == "LIVE":
             PAPER = False
@@ -96,6 +89,6 @@ class AlpacaExchange(Exchange):
 
 
 if __name__ == "__main__":
-    exchange = AlpacaExchange()
+    exchange = IBExchange()
     pos = exchange.all_positions
     quote = exchange.get_current_price("NVDA")

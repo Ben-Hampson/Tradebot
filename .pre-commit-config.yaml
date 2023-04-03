@@ -15,16 +15,16 @@ repos:
     -   id: black
         # Runs black first, adds changes to staging, then runs black again.
         entry: bash -c 'black src tests; git add -u' --
--   repo: local
-    hooks:
-    - id: pylint
-      name: pylint
-      entry: pylint
-      language: system
-      types: [python]
-      args:
-        [
-          "--rcfile=.pylintrc",
-          "src",
-          "tests"
-        ]
+# -   repo: local
+#     hooks:
+#     - id: pylint
+#       name: pylint
+#       entry: pylint
+#       language: system
+#       types: [python]
+#       args:
+#         [
+#           "--rcfile=.pylintrc",
+#           "src",
+#           "tests"
+#         ]

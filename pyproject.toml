@@ -18,7 +18,7 @@ newtulipy = "^0.4.6"
 "backports.zoneinfo" = "^0.2.1"
 sqlmodel = "^0.0.6"
 ib-insync = "^0.9.76"
-alpaca-py = "^0.6.1"
+dydx-v3-python = "^2.0.1"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3"

@@ -17,9 +17,9 @@ class ExchangeFactory:
         """
         if exchange.lower() == "alpaca":
             # Bad form. Shouldn't import here. But it's due to a dependency conflict.
-            from src.exchange_alpaca import AlpacaExchange
+            from exchange_ib import IBExchange
 
-            return AlpacaExchange()
+            return IBExchange()
         elif exchange.lower() == "dydx":
             from src.exchange_dydx import dYdXExchange
 
