@@ -1,4 +1,5 @@
 from src.exchange import Exchange
+from src.exchange_ib import IBExchange
 
 
 class ExchangeFactory:
@@ -15,10 +16,7 @@ class ExchangeFactory:
         Returns:
             Exchange
         """
-        if exchange.lower() == "alpaca":
-            # Bad form. Shouldn't import here. But it's due to a dependency conflict.
-            from exchange_ib import IBExchange
-
+        if exchange.lower() == "interactive-brokers":
             return IBExchange()
         elif exchange.lower() == "dydx":
             from src.exchange_dydx import dYdXExchange

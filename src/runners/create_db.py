@@ -73,7 +73,7 @@ def populate_instruments():
             symbol="NVDA",
             base_currency="NVDA",  # Not ideal. Exchange.get_symbol() Have 'exchange_symbol' as a field.
             quote_currency="USD",
-            exchange="alpaca",
+            exchange="interactive-brokers",
             exchange_iso="NYSE",  # It's on NASDAQ really, but they have the same hours.
             ohlc_data_source="alpaca",
             vehicle="stock",

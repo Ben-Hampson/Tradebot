@@ -12,4 +12,7 @@ format:
 	poetry run isort src tests
 
 docker:
+	docker-compose up --remove-orphans --force-recreate
+
+docker-build:
 	docker-compose up --build --remove-orphans --force-recreate
