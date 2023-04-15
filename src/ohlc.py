@@ -328,5 +328,5 @@ class OHLCUpdaterFactory:
         """
         if ohlc_data_source.lower() == "crypto-compare":
             return CryptoCompareOHLC(symbol)
-        elif ohlc_data_source.lower() == "alpaca":
+        elif ohlc_data_source.lower() == "interactive-brokers":
             return IBOHLC(symbol)

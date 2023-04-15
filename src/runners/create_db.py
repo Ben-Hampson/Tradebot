@@ -75,7 +75,7 @@ def populate_instruments():
             quote_currency="USD",
             exchange="interactive-brokers",
             exchange_iso="NYSE",  # It's on NASDAQ really, but they have the same hours.
-            ohlc_data_source="alpaca",
+            ohlc_data_source="interactive-brokers",
             vehicle="stock",
             time_zone="America/New_York",
             order_time=dt.time(10, 0),
