@@ -269,7 +269,7 @@ class IBOHLC(OHLCUpdater):
             self.insert_ohlc_data()
             log.info("%s: Data inserted.", self.symbol)
         else:
-            log.info("%s: Already up to date.", self.symbol)
+            log.info("%s data is already up to date. No records added.", self.symbol)
 
     def get_ohlc_data(self, start_date: dt.datetime, end_date: dt.datetime) -> None:
         """Get OHLC data for an Instrument between two dates.
@@ -305,7 +305,13 @@ class IBOHLC(OHLCUpdater):
         df["symbol"] = self.symbol
         df["symbol_date"] = df["symbol"] + " " + df.date.dt.strftime("%Y-%m-%d")
 
-        self.df = df
+        if start_date:
+            df = df[(df["date"] > start_date)]
+        if end_date:
+            df = df[(df["date"] < end_date)]
+
+        if not df.empty:
+            self.df = df
 
     def insert_ohlc_data(self) -> None:
         """Insert OHLC data into 'ohlc' table."""

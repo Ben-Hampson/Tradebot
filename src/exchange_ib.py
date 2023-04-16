@@ -32,7 +32,7 @@ class IBExchange(Exchange):
             ALPACA_SECRET_KEY = os.getenv("ALPACA_PAPER_SECRET_KEY")
 
     @property
-    def all_positions(self):
+    def all_positions(self) -> dict:
         """Get all positions."""
         # TODO: finalise
         return self.ib.get_portfolio()
@@ -47,7 +47,8 @@ class IBExchange(Exchange):
         all_positions = self.all_positions
 
         try:
-            return float(all_positions[symbol]["size"])
+            # TODO: Check this is accurate when having a stock in the portfolio
+            return float(all_positions[symbol])
             pass
         except KeyError:
             return 0.0
@@ -57,7 +58,7 @@ class IBExchange(Exchange):
         """Get the total equity on the account."""
         # TODO: Test this out with my account
         # return self.ib.get_netvalue()
-        return 42.01
+        return 42.0
 
     def get_current_price(self, symbol: str):
         """Get the price of one unit of this instrument on the exchange.
