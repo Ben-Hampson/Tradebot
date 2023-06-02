@@ -151,11 +151,9 @@ class CryptoCompareOHLC(OHLCUpdater):
                     break
 
             all_data = all_data[i:]
-
-        if limit == 1:
-            # If just updating OHLC for one day (today).
-            # For some reason if you just ask for 1, CC actually gives 2 data points.
-            all_data = [all_data[1]]
+        else:
+            # CryptoCompare gives 1 too many days at the start. Trim it.
+            all_data = all_data[1:]
 
         self.data = all_data
 
