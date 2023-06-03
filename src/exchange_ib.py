@@ -56,9 +56,7 @@ class IBExchange(Exchange):
     @property
     def total_equity(self) -> float:
         """Get the total equity on the account."""
-        # TODO: Test this out with my account
-        # return self.ib.get_netvalue()
-        return 42.0
+        return float(self.ib.get_netvalue())
 
     def get_current_price(self, symbol: str):
         """Get the price of one unit of this instrument on the exchange.
@@ -92,7 +90,7 @@ class IBExchange(Exchange):
         ]
 
         order = self.ib.submit_orders(list_of_orders)
-        print(order)
+        return order
 
 
 if __name__ == "__main__":
