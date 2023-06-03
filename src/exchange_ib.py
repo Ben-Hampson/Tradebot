@@ -21,16 +21,6 @@ class IBExchange(Exchange):
         IBEAM_HOST = os.getenv("IBEAM_HOST", "https://ibeam:5000")
         self.ib = easyib.REST(url=IBEAM_HOST, ssl=False)
 
-        # TODO: Use TRADING_MODE
-        if os.getenv("TRADING_MODE") == "LIVE":
-            PAPER = False
-            ALPACA_KEY_ID = os.getenv("ALPACA_LIVE_KEY_ID")
-            ALPACA_SECRET_KEY = os.getenv("ALPACA_LIVE_SECRET_KEY")
-        else:
-            PAPER = True
-            ALPACA_KEY_ID = os.getenv("ALPACA_PAPER_KEY_ID")
-            ALPACA_SECRET_KEY = os.getenv("ALPACA_PAPER_SECRET_KEY")
-
     @property
     def all_positions(self) -> dict:
         """Get all positions."""
