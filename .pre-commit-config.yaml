@@ -15,6 +15,14 @@ repos:
     -   id: black
         # Runs black first, adds changes to staging, then runs black again.
         entry: bash -c 'black src tests; git add -u' --
+-   repo: local
+    hooks:
+        - id: pytest-check
+          name: pytest-check
+          entry: poetry run pytest tests/
+          language: system
+          pass_filenames: false
+          always_run: true
 # -   repo: local
 #     hooks:
 #     - id: pylint
