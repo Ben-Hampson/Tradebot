@@ -1,10 +1,11 @@
 """Tests for strategy.py"""
-from src.strategy import EMACStrategyUpdater
-import numpy as np
 from unittest.mock import patch
-from src.models import Instrument
-import pytest
+
 import numpy as np
+import pytest
+
+from src.models import Instrument
+from src.strategy import EMACStrategyUpdater
 
 
 class TestEMACStrategyUpdater:

@@ -1,9 +1,9 @@
 import logging
 import os
 
-from src.exchange import Exchange
-
 import easyib
+
+from src.exchange import Exchange
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

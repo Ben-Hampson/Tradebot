@@ -6,10 +6,10 @@ import os
 from abc import ABC
 from typing import Optional
 
+import easyib
 import numpy as np
 import pandas as pd
 import requests
-import easyib
 from sqlmodel import Session
 
 from src.db_utils import engine, get_instrument, get_latest_record
