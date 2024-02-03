@@ -17,14 +17,22 @@ repos:
         entry: bash -c 'black src tests; git add -u' --
 -   repo: local
     hooks:
-    - id: pylint
-      name: pylint
-      entry: pylint
-      language: system
-      types: [python]
-      args:
-        [
-          "--rcfile=.pylintrc",
-          "src",
-          "tests"
-        ]
+        - id: pytest-check
+          name: pytest-check
+          entry: poetry run pytest tests/
+          language: system
+          pass_filenames: false
+          always_run: true
+# -   repo: local
+#     hooks:
+#     - id: pylint
+#       name: pylint
+#       entry: pylint
+#       language: system
+#       types: [python]
+#       args:
+#         [
+#           "--rcfile=.pylintrc",
+#           "src",
+#           "tests"
+#         ]

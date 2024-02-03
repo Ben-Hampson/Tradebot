@@ -1,10 +1,4 @@
 """dYdX Exchanbe class, based on Exchange ABC."""
-# Can't add dydx-v3-python to poetry because:
-#  - dydx-v3-python depends on web3 >=5.0.0,<6.0.0 depends on websockets (>=7.0.0,<8.0.0
-#  - alpaca-py depends on websockets (>=10.2,<11.0)
-#
-# source dydx-env/bin/activate
-
 import logging
 import os
 import time

@@ -6,11 +6,10 @@ import os
 from abc import ABC
 from typing import Optional
 
+import easyib
 import numpy as np
+import pandas as pd
 import requests
-from alpaca.data import StockHistoricalDataClient
-from alpaca.data.requests import StockBarsRequest
-from alpaca.data.timeframe import TimeFrame
 from sqlmodel import Session
 
 from src.db_utils import engine, get_instrument, get_latest_record
@@ -152,11 +151,9 @@ class CryptoCompareOHLC(OHLCUpdater):
                     break
 
             all_data = all_data[i:]
-
-        if limit == 1:
-            # If just updating OHLC for one day (today).
-            # For some reason if you just ask for 1, CC actually gives 2 data points.
-            all_data = [all_data[1]]
+        else:
+            # CryptoCompare gives 1 too many days at the start. Trim it.
+            all_data = all_data[1:]
 
         self.data = all_data
 
@@ -232,18 +229,17 @@ class CryptoCompareOHLC(OHLCUpdater):
         log.info(f"{self.symbol} OHLC data: added to database.")
 
 
-class AlpacaOHLC(OHLCUpdater):
-    """Get OHLC data from Alpaca."""
+class IBOHLC(OHLCUpdater):
+    """Get OHLC data from Interactive Brokers."""
 
     def __init__(self, symbol: str):
         """Initialiser.
 
         Args:
-        symbol: Instrument symbol e.g. BTCUSD.
+        symbol: Instrument symbol e.g. NVDA.
         """
-        self.shdc = StockHistoricalDataClient(
-            os.getenv("ALPACA_LIVE_KEY_ID"), os.getenv("ALPACA_LIVE_SECRET_KEY")
-        )
+        IBEAM_HOST = os.getenv("IBEAM_HOST", "https://ibeam:5000")
+        self.ib = easyib.REST(url=IBEAM_HOST, ssl=False)
         self.symbol = symbol
 
     def update_ohlc_data(self) -> None:
@@ -271,10 +267,12 @@ class AlpacaOHLC(OHLCUpdater):
             self.insert_ohlc_data()
             log.info("%s: Data inserted.", self.symbol)
         else:
-            log.info("%s: Already up to date.", self.symbol)
+            log.info("%s data is already up to date. No records added.", self.symbol)
 
     def get_ohlc_data(self, start_date: dt.datetime, end_date: dt.datetime) -> None:
         """Get OHLC data for an Instrument between two dates.
+
+        IB API returns a max 1000 data points. There's a limit of 5 concurrent requests.
 
         Inclusive of the start date and end date.
 
@@ -286,30 +284,32 @@ class AlpacaOHLC(OHLCUpdater):
             if not time_check(self.symbol, "forecast"):
                 return None
 
-        request_params = StockBarsRequest(
-            symbol_or_symbols=self.symbol,
-            timeframe=TimeFrame.Day,
-            start=start_date,
-            end=end_date,
+        # TODO: Fix period
+        # period: {1-30}min, {1-8}h, {1-1000}d, {1-792}w, {1-182}m, {1-15}y
+        bars = self.ib.get_bars(self.symbol, period="5y", bar="1d")
+
+        df = pd.DataFrame(bars["data"])
+        df.t = pd.to_datetime(df["t"], unit="ms")
+        df = df.rename(
+            columns={
+                "o": "open",
+                "c": "close",
+                "h": "high",
+                "l": "low",
+                "v": "volume",
+                "t": "date",
+            }
         )
+        df["symbol"] = self.symbol
+        df["symbol_date"] = df["symbol"] + " " + df.date.dt.strftime("%Y-%m-%d")
 
-        try:
-            bars = self.shdc.get_stock_bars(request_params)
-        except AttributeError:
-            log.info(
-                "%s: Alpaca exchange returned no data. Probably because there's more data to add.",
-                self.symbol,
-            )
-            log.debug(request_params)
-            return None
+        if start_date:
+            df = df[(df["date"] > start_date)]
+        if end_date:
+            df = df[(df["date"] < end_date)]
 
-        df = bars.df.reset_index()
-        df["date"] = [x.to_pydatetime() for x in df.timestamp]
-        df["symbol_date"] = df["symbol"] + " " + df.timestamp.dt.strftime("%Y-%m-%d")
-
-        self.df = df[
-            ["symbol_date", "symbol", "date", "open", "high", "low", "close", "volume"]
-        ]
+        if not df.empty:
+            self.df = df
 
     def insert_ohlc_data(self) -> None:
         """Insert OHLC data into 'ohlc' table."""
@@ -332,5 +332,5 @@ class OHLCUpdaterFactory:
         """
         if ohlc_data_source.lower() == "crypto-compare":
             return CryptoCompareOHLC(symbol)
-        elif ohlc_data_source.lower() == "alpaca":
-            return AlpacaOHLC(symbol)
+        elif ohlc_data_source.lower() == "interactive-brokers":
+            return IBOHLC(symbol)

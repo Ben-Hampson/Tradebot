@@ -3,7 +3,7 @@ import logging
 import os
 
 from src.db_utils import get_instrument, get_portfolio
-from src.ohlc import AlpacaOHLC, OHLCUpdaterFactory
+from src.ohlc import OHLCUpdaterFactory
 from src.time_checker import time_check
 
 log = logging.getLogger(__name__)

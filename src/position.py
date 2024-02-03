@@ -100,6 +100,10 @@ class Position:
             )
             latest_record = session.exec(stmt).first()
 
+        if not latest_record:
+            log.error("No OHLC and/or EMACStrategy records for %s.", self.db_symbol)
+            log.error("Run update_ohlc and update_strategy first.")
+
         return {
             "date": latest_record.date,
             "close": latest_record.close,

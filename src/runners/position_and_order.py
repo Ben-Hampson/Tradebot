@@ -37,7 +37,6 @@ def position_and_order(instrument: Instrument, sub_weight: float):
         ):
             return None
 
-    # Calculate Desired Position
     position.calc_desired_position()
 
     if position.decision:
