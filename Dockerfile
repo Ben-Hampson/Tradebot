@@ -23,7 +23,7 @@ FROM python-base as builder-base
 RUN apt-get update --fix-missing \
     && apt-get install -y build-essential
 
-RUN pip install --no-cache-dir poetry=="1.1.12"
+RUN pip install --no-cache-dir poetry=="1.7.1"
 
 # Copy project requirement files here to ensure they will be cached.
 COPY pyproject.toml poetry.lock ./
