@@ -1,4 +1,4 @@
-"""dYdX Exchanbe class, based on Exchange ABC."""
+"""dYdX Exchange class, based on Exchange ABC."""
 import logging
 import os
 import time
@@ -73,7 +73,7 @@ class dYdXExchange(Exchange):
         """Get the total equity on the account."""
         return float(self.account().data["account"]["equity"])
 
-    def get_current_price(self, symbol: str):
+    def get_current_price(self, symbol: str) -> float:
         """Get the value of one unit of this instrument on the exchange.
 
         dYdX returns a human readable value. e.g. 1 BTC = $x instead of
