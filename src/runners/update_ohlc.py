@@ -31,10 +31,8 @@ def main():
     portfolio = get_portfolio()
     for instrument in portfolio:
         if os.getenv("TIME_CHECKER") == "1":
-            if time_check(instrument.symbol, "forecast"):
-                pass
-            else:
-                return
+            if not time_check(instrument.symbol, "forecast"):
+                continue
 
         update_one(instrument.symbol)
 
