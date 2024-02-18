@@ -5,7 +5,7 @@ import os
 import re
 
 import telegram
-from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
+from telegram.ext import Application
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -13,45 +13,44 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
-bot = telegram.Bot(token=os.getenv("TELEGRAM_TOKEN"))
-updater = Updater(token=os.getenv("TELEGRAM_TOKEN"), use_context=True)
-dispatcher = updater.dispatcher
 
+class TelegramBot:
+    """Singleton Telegram bot for sending messages and handling commands."""
 
-def start(update, context):
-    """For command '/start', return a message."""
-    context.bot.send_message(
-        chat_id=update.effective_chat.id, text="Hello, I am tradebot!"
-    )
+    _instance = None
 
+    def __new__(cls):
+        if cls._instance is None:
+            log.info("TelegramBot has no instance. Creating instance.")
+            cls._instance = super(TelegramBot, cls).__new__(cls)
 
-def formatter(text: str) -> str:
-    """Format messages to make sure they don't cause an error."""
-    text = re.sub(r"([\[\]()~`>#+-=|{}.!])", r"\\\1", text)
-    return text
+            cls.application = (
+                Application.builder().token(os.getenv("TELEGRAM_TOKEN")).build()
+            )
 
+        else:
+            log.info("Instance already exists. Returning it.")
 
-def outbound(message: str):
-    """Send a Telegram message."""
-    message = formatter(message)
-    bot.send_message(
-        chat_id=os.getenv("TELEGRAM_CHAT_ID"),
-        text=message,
-        parse_mode=telegram.ParseMode.MARKDOWN_V2,
-    )
+        return cls._instance
 
+    def formatter(self, text: str) -> str:
+        """Format messages to make sure they don't cause an error."""
+        text = re.sub(r"([\[\]()~`>#+-=|{}.!])", r"\\\1", text)
+        return text
 
-outbound_handler = MessageHandler(Filters.text & (~Filters.command), outbound)
-dispatcher.add_handler(outbound_handler)
+    async def outbound(self, message: str):
+        """Send a Telegram message."""
+        message = self.formatter(message)
+        await self.application.bot.send_message(
+            chat_id=os.getenv("TELEGRAM_CHAT_ID"),
+            text=message,
+            parse_mode=telegram.constants.ParseMode.MARKDOWN_V2,
+        )
 
 
 def main():
     """Run Telegram bot."""
-    start_handler = CommandHandler("start", start)
-    dispatcher.add_handler(start_handler)
-
-    updater.start_polling()
-    updater.idle()
+    TelegramBot()
 
 
 if __name__ == "__main__":
