@@ -55,7 +55,7 @@ RUN mkdir -p /home/data \
     && mkdir -p /home/logs
 
 # Cron
-RUN apt-get -qq update -y && apt-get -qq install -y cron
+RUN apt-get -qq update -y && apt-get -qq install -y cron vim
 COPY root /etc/cron.d/root
 RUN chmod 0644 /etc/cron.d/root
 RUN crontab /etc/cron.d/root

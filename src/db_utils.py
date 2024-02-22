@@ -22,7 +22,8 @@ engine = create_engine(f"sqlite:///{APP_DB}")
 
 
 def create_db_and_tables():
-    """Creates database with tables based on models."""
+    """Creates database with tables based on models
+    if it doesn't already exist."""
 
     engine_test = create_engine(f"sqlite:///{APP_DB}")
     SQLModel.metadata.create_all(engine_test)
