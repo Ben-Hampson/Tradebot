@@ -53,7 +53,7 @@ class IBExchange(Exchange):
 
         The price is the close of the latest minute bar.
         """
-        bars = self.ib.get_bars(symbol, period="1d", bar="1m")
+        bars = self.ib.get_bars(symbol, period="1d", bar="1min")
         return float(bars["data"][0]["c"])
 
     def get_symbol(self, base_currency: str, quote_currency: str) -> str:

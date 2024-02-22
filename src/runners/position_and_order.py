@@ -5,7 +5,7 @@ import os
 import sys
 from textwrap import dedent
 
-from src import telegram_bot as tg
+from src.telegram_bot import TelegramBot
 from src.db_utils import get_instrument, get_portfolio
 from src.exchange_factory import ExchangeFactory
 from src.models import Instrument
@@ -39,6 +39,8 @@ def position_and_order(instrument: Instrument, sub_weight: float):
 
     position.calc_desired_position()
 
+    telegram_bot = TelegramBot()
+
     if position.decision:
         # Execute Order
         exc = ExchangeFactory.create_exchange(instrument.exchange)
@@ -51,7 +53,7 @@ def position_and_order(instrument: Instrument, sub_weight: float):
             *{instrument.symbol}*
 
             Error while making order."""
-            tg.outbound(dedent(message))
+            telegram_bot.outbound(dedent(message))
             return None
 
         # Telegram Message
@@ -65,7 +67,7 @@ def position_and_order(instrument: Instrument, sub_weight: float):
 
         No change."""
 
-    tg.outbound(dedent(message))
+    telegram_bot.outbound(dedent(message))
 
     log.info(f"{instrument.symbol}: Complete")
 

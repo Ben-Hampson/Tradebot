@@ -4,7 +4,7 @@ import logging
 import os
 
 from src import db_utils
-from src import telegram_bot as tg
+from src.telegram_bot import TelegramBot
 from src.db_utils import get_portfolio
 from src.models import OHLC, EMACStrategy
 from src.strategy import EMACStrategyUpdater
@@ -38,6 +38,8 @@ def update_all():
 
 def main():
     """Populate the EMACStrategy table from scratch or update it, depending on its status."""
+    telegram_bot = TelegramBot()
+
     for instrument in get_portfolio():
         # Check if forecast_time was in the last 15 minutes.
         if os.getenv("TIME_CHECKER") == "1":
@@ -68,7 +70,7 @@ def main():
             log.info(f"{instrument.symbol}: Strategy updated.")
             latest = db_utils.get_latest_ohlc_strat_record(instrument.symbol)
             tg_message = f"\n{instrument.symbol} Forecast Updated.\n\nInstrument Risk: {latest.instrument_risk}\nForecast: {latest.forecast}"
-            tg.outbound(tg_message)
+            telegram_bot.outbound(tg_message)
         else:
             log.info(f"{instrument.symbol}: Strategy already up to date.")
 

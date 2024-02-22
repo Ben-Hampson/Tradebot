@@ -4,7 +4,7 @@ import asyncio
 
 def main():
     x = TelegramBot()
-    asyncio.run(x.outbound("testing123"))
+    x.outbound("testing123")
     y = TelegramBot()
 
 
