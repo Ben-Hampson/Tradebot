@@ -295,7 +295,6 @@ class IBOHLC(OHLCUpdater):
             columns={
                 "o": "open",
                 "c": "close",
-                "h": "high",
                 "l": "low",
                 "v": "volume",
                 "t": "date",

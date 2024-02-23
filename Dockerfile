@@ -39,18 +39,11 @@ FROM python-base as development
 # Copy in our built poetry + venv
 COPY --from=builder-base $VENV_PATH $VENV_PATH
 
-# Quicker install as runtime deps are already installed
-# RUN python -m venv "$VENV_PATH" \
-#     && . "$VENV_PATH/bin/activate" \
-#     && poetry install --no-root --without dev
-
 # ================================================
 ENV TZ=Europe/London
 
 WORKDIR /home
 
-COPY src/ ./src
-COPY run/ ./run
 RUN mkdir -p /home/data \
     && mkdir -p /home/logs
 
@@ -59,6 +52,8 @@ COPY root /etc/cron.d/root
 RUN chmod 0644 /etc/cron.d/root
 RUN crontab /etc/cron.d/root
 
+COPY src/ ./src
+COPY run/ ./run
 COPY /start.sh .
 
 CMD ["/bin/bash", "/home/start.sh"]

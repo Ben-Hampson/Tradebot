@@ -12,10 +12,10 @@ format:
 	poetry run isort run src tests
 
 docker:
-	docker-compose -f docker-compose-local-full.yml up --remove-orphans --force-recreate
+	docker-compose -f docker-compose-local-full.yml up --remove-orphans --force-recreate -d
 
 docker-build:
-	docker-compose -f docker-compose-local-full.yml up --build --remove-orphans --force-recreate
+	docker-compose -f docker-compose-local-full.yml up --build --remove-orphans --force-recreate -d
 
 docker-ibeam-up:
 	docker-compose -f docker-compose-local-ibeam.yml up -d
