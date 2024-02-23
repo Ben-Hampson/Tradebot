@@ -9,3 +9,5 @@ python --version
 cd /home
 echo "Updating database"
 python -m src.runners.startup
+
+tail -f /dev/null
