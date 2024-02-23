@@ -189,7 +189,8 @@ class CryptoCompareOHLC(OHLCUpdater):
             close = float(bar["close"])
             log.info(f"{date} - {close}")
 
-            date_array_rev.append(date)  # Returns: First = latest, last = oldest.
+            # Returns: First = latest, last = oldest.
+            date_array_rev.append(date)
             open_array_rev.append(open)
             high_array_rev.append(high)
             low_array_rev.append(low)

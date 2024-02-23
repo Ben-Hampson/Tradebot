@@ -1,15 +1,15 @@
-.PHONY = lint format pytest
+.PHONY = lint format test
 
 
 lint:
 	poetry run pylint src tests --fail-under=8.4
 
-pytest:
-	poetry run python -m pytest --cov=src.crypto2 tests
+test:
+	poetry run python -m pytest --cov=src tests
 
 format:
-	poetry run black src tests
-	poetry run isort src tests
+	poetry run black run src tests
+	poetry run isort run src tests
 
 docker:
 	docker-compose -f docker-compose-local-full.yml up --remove-orphans --force-recreate

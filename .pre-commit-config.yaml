@@ -14,7 +14,7 @@ repos:
     hooks:
     -   id: black
         # Runs black first, adds changes to staging, then runs black again.
-        entry: bash -c 'black src tests; git add -u' --
+        entry: bash -c 'black runners src tests; git add -u' --
 -   repo: local
     hooks:
         - id: pytest-check

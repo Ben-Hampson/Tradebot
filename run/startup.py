@@ -6,8 +6,8 @@ import os
 
 from src.telegram_bot import TelegramBot
 from src.db_utils import get_latest_ohlc_strat_record, get_portfolio
-from src.runners import update_ohlc, update_strategy
-from src.runners.create_db import create_db_and_tables, populate_instruments
+from run import update_strategy, update_ohlc
+from run.create_db import create_db_and_tables, populate_instruments
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

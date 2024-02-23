@@ -8,6 +8,6 @@ service cron status
 python --version
 cd /home
 echo "Updating database"
-python -m src.runners.startup
+python -m run.startup
 
 tail -f /dev/null

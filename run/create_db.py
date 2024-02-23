@@ -71,10 +71,12 @@ def populate_instruments():
         Instrument(
             # Nvidia
             symbol="NVDA",
-            base_currency="NVDA",  # Not ideal. Exchange.get_symbol() Have 'exchange_symbol' as a field.
+            # Not ideal. Exchange.get_symbol() Have 'exchange_symbol' as a field.
+            base_currency="NVDA",
             quote_currency="USD",
             exchange="interactive-brokers",
-            exchange_iso="NYSE",  # It's on NASDAQ really, but they have the same hours.
+            # It's on NASDAQ really, but they have the same hours.
+            exchange_iso="NYSE",
             ohlc_data_source="interactive-brokers",
             vehicle="stock",
             time_zone="America/New_York",
