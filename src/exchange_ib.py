@@ -61,14 +61,13 @@ class IBExchange(Exchange):
         # TODO: Check
         return base_currency
 
-    def order(
+    def market_order(
         self,
         symbol: str,
         side: str,
         quantity: float,
-        order_type: str = "MARKET",
     ):
-        """Creates an order on the exchange."""
+        """Creates a market order on the exchange."""
         list_of_orders = [
             {
                 "conid": self.ib.get_conid(symbol),

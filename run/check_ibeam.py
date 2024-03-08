@@ -29,7 +29,7 @@ def main():
     if authenticated and connected:
         log.info("IBeam container is UP and AUTHENTICATED.")
     else:
-        log.error("IBeam container is up but has a problem.", response)
+        log.error("IBeam container is up but not authenticated.", response)
 
     return authenticated and connected
 

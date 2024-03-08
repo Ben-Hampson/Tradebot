@@ -46,7 +46,7 @@ def position_and_order(instrument: Instrument, sub_weight: float):
         exc = ExchangeFactory.create_exchange(instrument.exchange)
         exc_symbol = exc.get_symbol(instrument.base_currency, instrument.quote_currency)
         try:
-            exc.order(exc_symbol, position.side, position.quantity)
+            exc.market_order(exc_symbol, position.side, position.quantity)
         except Exception:
             log.exception("%s: Exception while making order.", instrument.symbol)
             message = f"""\

@@ -1,13 +1,29 @@
 """Exchanges where one can buy, sell, and check positions."""
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum
+from typing import Dict
+
+
+class Side(Enum):
+    BUY = 1
+    SELL = 2
+
+
+@dataclass
+class Position:
+    """An open position in an brokerage account portfolio."""
+    symbol: str
+    side: Side
+    size: float
 
 
 class Exchange(ABC):
     """Abstract Base Class for exchanges."""
 
     @property
-    def all_positions(self):
-        """Get all positions."""
+    def all_positions(self) -> Dict[str, Position]:
+        """Get all Positions."""
         pass
 
     @abstractmethod
@@ -25,7 +41,7 @@ class Exchange(ABC):
         pass
 
     @abstractmethod
-    def get_current_price(self, symbol: str):
+    def get_current_price(self, symbol: str) -> float:
         """Get the value of one unit of this instrument on the exchange.
 
         dYdX returns a human readable value. e.g. 1 BTC = $x instead of
@@ -41,14 +57,13 @@ class Exchange(ABC):
         pass
 
     @abstractmethod
-    def order(
+    def market_order(
         self,
         symbol: str,
         side: str,
         quantity: float,
-        order_type: str = "MARKET",
     ):
-        """Creates an order on the exchange.
+        """Creates a market order on the exchange.
 
         2% slippage is allowed.
         """
