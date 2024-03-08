@@ -294,8 +294,9 @@ class IBOHLC(OHLCUpdater):
         df = df.rename(
             columns={
                 "o": "open",
-                "c": "close",
+                "h": "high",
                 "l": "low",
+                "c": "close",
                 "v": "volume",
                 "t": "date",
             }
