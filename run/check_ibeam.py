@@ -1,6 +1,6 @@
 """Check IBeam is running and authenticated."""
 
-import easyib
+import easyib  # type: ignore
 import os
 import time
 import logging

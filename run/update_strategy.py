@@ -5,7 +5,6 @@ import os
 
 from src import db_utils
 from src.telegram_bot import TelegramBot
-from src.db_utils import get_portfolio
 from src.models import OHLC, EMACStrategy
 from src.strategy import EMACStrategyUpdater
 from src.time_checker import time_check
@@ -31,7 +30,7 @@ def update_all():
     """Populate EMAC strategy data in database for all instruments.
 
     Calculates all strategic data since the start of OHLC data."""
-    portfolio = get_portfolio()
+    portfolio = db_utils.get_portfolio()
     for instrument in portfolio:
         update_one(instrument.symbol)
 
@@ -40,7 +39,7 @@ def main():
     """Populate the EMACStrategy table from scratch or update it, depending on its status."""
     telegram_bot = TelegramBot()
 
-    for instrument in get_portfolio():
+    for instrument in db_utils.get_portfolio():
         # Check if forecast_time was in the last 15 minutes.
         if os.getenv("TIME_CHECKER") == "1":
             if not time_check(instrument.symbol, "forecast"):
