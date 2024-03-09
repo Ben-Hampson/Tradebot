@@ -1,12 +1,13 @@
 from src.exchange import Exchange
 from src.exchange_ib import IBExchange
+from typing import Optional
 
 
 class ExchangeFactory:
     """Factory to provide the right Exchange."""
 
     @staticmethod
-    def create_exchange(exchange: str) -> Exchange:
+    def create_exchange(exchange: str) -> Optional[Exchange]:
         """Return the correct Exchange for the symbol.
 
         Args:
@@ -22,3 +23,4 @@ class ExchangeFactory:
             from src.exchange_dydx import dYdXExchange
 
             return dYdXExchange()
+        return None

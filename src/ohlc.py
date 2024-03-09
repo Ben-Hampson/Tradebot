@@ -6,9 +6,9 @@ import os
 from abc import ABC
 from typing import Optional
 
-import easyib
+import easyib  # type: ignore
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore  # pandas-stubs requires >=3.9
 import requests
 from sqlmodel import Session
 

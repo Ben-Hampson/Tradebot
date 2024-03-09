@@ -22,6 +22,7 @@ class Exchange(ABC):
     """Abstract Base Class for exchanges."""
 
     @property
+    @abstractmethod
     def all_positions(self) -> Dict[str, Position]:
         """Get all Positions."""
         pass
@@ -36,6 +37,7 @@ class Exchange(ABC):
         pass
 
     @property
+    @abstractmethod
     def total_equity(self) -> float:
         """Get the total equity on the account."""
         pass

@@ -1,7 +1,6 @@
 """Models for database."""
 
 from datetime import datetime, time
-from typing import Optional
 
 from sqlmodel import Field, SQLModel
 

@@ -4,8 +4,8 @@ import logging
 import os
 import time
 
-from dydx3 import Client
-from dydx3.constants import (
+from dydx3 import Client  # type: ignore
+from dydx3.constants import (  # type: ignore
     API_HOST_MAINNET,
     NETWORK_ID_MAINNET,
     ORDER_TYPE_MARKET,

@@ -4,7 +4,7 @@ import datetime
 import logging
 
 import exchange_calendars as ecals
-import pandas as pd
+import pandas as pd  # type: ignore  # pandas-stubs requires >=3.9
 import pytz
 from sqlmodel import Session, select
 

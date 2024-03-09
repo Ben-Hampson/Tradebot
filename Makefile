@@ -11,6 +11,9 @@ format:
 	poetry run black run src tests
 	poetry run isort run src tests
 
+type:
+	poetry run mypy .
+
 docker:
 	docker-compose -f docker-compose-local-full.yml up --remove-orphans --force-recreate -d
 
