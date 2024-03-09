@@ -1,5 +1,4 @@
 import logging
-import os
 from functools import cached_property
 from typing import Union
 
@@ -187,9 +186,9 @@ class Position:
         log.info("--- Action: ---")
         if abs(ideal_position - self.position) > 0.1 * abs(self.position):
             self.decision = True
-            log.info(f"Position change. New Position: {ideal_position}")
+            log.info("Position change. New Position: %s", ideal_position)
         else:
             self.decision = False
-            log.info(f"No change.")
+            log.info("No change.")
 
         return (self.decision, self.side, self.quantity)
