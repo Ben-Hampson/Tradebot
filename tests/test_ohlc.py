@@ -1,7 +1,7 @@
 """Tests for ohlc.py"""
 
 import pytest
-from src.ohlc import CryptoCompareOHLC
+from src.ohlc_cryptocompare import CryptoCompareOHLC
 from src.models import OHLC
 import datetime as dt
 from unittest.mock import patch, MagicMock
@@ -16,10 +16,10 @@ class TestCryptoCompareOLHC:
             symbol="BTCUSD", end_date="2024-03-31", start_date="2024-03-01"
         )
 
-    @patch("src.ohlc.dt")
-    @patch("src.ohlc.get_latest_record")
-    @patch("src.ohlc.CryptoCompareOHLC.get_ohlc_data")
-    @patch("src.ohlc.CryptoCompareOHLC.insert_ohlc_data")
+    @patch("src.ohlc_cryptocompare.dt.date")
+    @patch("src.ohlc_cryptocompare.get_latest_record")
+    @patch("src.ohlc_cryptocompare.CryptoCompareOHLC.get_ohlc_data")
+    @patch("src.ohlc_cryptocompare.CryptoCompareOHLC.insert_ohlc_data")
     def test_update_ohlc_data(
         self,
         mock_insert_ohlc_data,
@@ -39,7 +39,7 @@ class TestCryptoCompareOLHC:
             volume=None,
         )
 
-        mocked_today = dt.datetime(2024, 3, 1, 0, 0)
+        mocked_today = dt.date(2024, 3, 1)
         mock_dt.today.return_value = mocked_today
 
         ohlc_updater.update_ohlc_data()
@@ -47,11 +47,10 @@ class TestCryptoCompareOLHC:
         mock_get_ohlc_data.assert_called_once()
         mock_insert_ohlc_data.assert_called_once()
 
-
     def test_get_ohlc_data(self):
         pass
 
-    @patch("src.ohlc.requests.get")
+    @patch("src.ohlc_cryptocompare.requests.get")
     def test_request_cryptocompare(self, mock_get, ohlc_updater):
         mock_resp = MagicMock()
 

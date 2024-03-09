@@ -1,9 +1,10 @@
 import logging
 import os
 
-import easyib
+import easyib  # type: ignore
 
-from src.exchange import Exchange
+from src.exchange import Exchange, Position
+from typing import Dict
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -22,10 +23,17 @@ class IBExchange(Exchange):
         self.ib = easyib.REST(url=IBEAM_HOST, ssl=False)
 
     @property
-    def all_positions(self) -> dict:
-        """Get all positions."""
-        # TODO: finalise
-        return self.ib.get_portfolio()
+    def all_positions(self) -> Dict[str, Position]:
+        """Get all Positions."""
+        client_positions = self.ib.get_portfolio()
+        all_positions = dict()
+
+        # for pos in client_positions:
+        #     position = Position(
+        #       symbol = pos, side=Side.BUY, size=""
+        #     )
+
+        return all_positions
 
     def get_position(self, symbol: str) -> float:
         """Get the current position for a specific instrument.
@@ -33,13 +41,11 @@ class IBExchange(Exchange):
         Return the amount of the token. e.g. 0.01 ETH.
         Positive means the position is long. Negative means it's short.
         """
-        # TODO: write
         all_positions = self.all_positions
 
         try:
             # TODO: Check this is accurate when having a stock in the portfolio
-            return float(all_positions[symbol])
-            pass
+            return float(all_positions[symbol].size)
         except KeyError:
             return 0.0
 
