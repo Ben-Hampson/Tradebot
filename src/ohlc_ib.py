@@ -12,6 +12,7 @@ from src.time_checker import time_check
 
 log = logging.getLogger(__name__)
 
+
 class IBOHLC(OHLCUpdater):
     """Get OHLC data from Interactive Brokers."""
 
@@ -42,6 +43,7 @@ class IBOHLC(OHLCUpdater):
         elif latest_ohlc.date.date() != dt.date.today():
             # Get date for >1 day
             start = latest_ohlc.date + dt.timedelta(1)
+            start = dt.datetime.combine(start, dt.time(0, 0))
             end = dt.datetime.now() - dt.timedelta(minutes=20)
 
         self.get_ohlc_data(start, end)
