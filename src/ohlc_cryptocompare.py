@@ -6,6 +6,7 @@ import logging
 import os
 import numpy as np
 from sqlmodel import Session
+from typing import List
 
 from src.db_utils import engine, get_latest_record, get_instrument
 from src.models import OHLC
@@ -34,7 +35,7 @@ class CryptoCompareOHLC(OHLCUpdater):
         self.symbol = symbol
         self.instrument = get_instrument(symbol)
 
-    def update_ohlc_data(self):
+    def update_ohlc_data(self) -> None:
         """Main runner. Bring OHLC data in OHLC table up to date."""
         latest_ohlc = get_latest_record(self.symbol, OHLC)
 
@@ -51,44 +52,38 @@ class CryptoCompareOHLC(OHLCUpdater):
             start_date = latest_ohlc.date.date() + dt.timedelta(1)
         else:
             log.info(f"{self.symbol} data is already up to date. No records added.")
-            return
+            return None
 
-        self.get_ohlc_data(end_date, start_date)
-        self.insert_ohlc_data()
+        data = self.get_ohlc_data(end_date, start_date)
+        self.insert_ohlc_data(data)
 
-    def get_ohlc_data(self, end_date: dt.date, start_date: Optional[dt.date]):
+    def find_first_date(self, end_date: dt.date) -> dt.date:
+        cut_symbol = self.symbol[:-3]
+
+        first_ts = requests.get(
+            "https://min-api.cryptocompare.com/data/blockchain/list",
+            {"api_key": os.getenv("CC_API_KEY")},
+        ).json()["Data"][cut_symbol]["data_available_from"]
+
+        first_date = dt.datetime.fromtimestamp(first_ts).date()
+
+        return first_date
+
+    def get_ohlc_data(self, end_date: dt.date, start_date: Optional[dt.date]) -> List:
         """Get OHLC data for an Instrument between two dates.
 
         Inclusive of the start date and end date."""
-        if not self.instrument.vehicle == "crypto":
-            return None
-
-        # Set API limit
-        if start_date:
-            date_diff = end_date - start_date
-            limit = date_diff.days
-            log.info(f"# of days to get close data for: {limit}")
-
-        # Request data from CryptoCompare API
-        # If no start, get data from the beginning
-        if start_date is None:
+        if not start_date:
             log.info("Getting all available historic data.")
+            start_date = self.find_first_date(end_date)
 
-            # The start date should be in the Instrument table
-            first_ts = requests.get(
-                "https://min-api.cryptocompare.com/data/blockchain/list",
-                {"api_key": os.getenv("CC_API_KEY")},
-            ).json()["Data"]["BTC"]["data_available_from"]
-
-            first_date = dt.datetime.fromtimestamp(first_ts).date()
-
-            date_diff = end_date - first_date
-            limit = date_diff.days
-            log.info(f"# of days to get close data for: {limit}")
+        date_diff = end_date - start_date
+        limit = date_diff.days
+        log.info(f"# of days to get close data for: {limit}")
 
         if limit > 2000:
             # CryptoCompare has a limit of 2000 data points per request
-            all_data = []
+            all_data: List = []
             to_date = end_date
 
             while limit > 2000:
@@ -103,19 +98,15 @@ class CryptoCompareOHLC(OHLCUpdater):
         else:
             all_data = self.request_cryptocompare(limit, end_date)
 
-        if not start_date:
-            # Get rid of first data points with OHLC of 0,0,0,0
-            # because it breaks ti.volatility()
-            for i, ohlc in enumerate(all_data):
-                if sum([ohlc[1], ohlc[2], ohlc[3], ohlc[4]]) != 0:
-                    break
+        # Get rid of first data points with OHLC of 0,0,0,0
+        # because it breaks ti.volatility()
+        for i, ohlc in enumerate(all_data):
+            if sum([ohlc[1], ohlc[2], ohlc[3], ohlc[4]]) != 0:
+                break
 
-            all_data = all_data[i:]
-        else:
-            # CryptoCompare gives 1 too many days at the start. Trim it.
-            all_data = all_data[1:]
+        all_data = all_data[i:]
 
-        self.data = all_data
+        return all_data
 
     def request_cryptocompare(self, limit: int, to_date: dt.date) -> list:
         """Get all OHLC data for {limit} number of days up to, but not including, the end date."""
@@ -165,13 +156,13 @@ class CryptoCompareOHLC(OHLCUpdater):
 
         return list(zip(date_array, open_array, high_array, low_array, close_array))
 
-    def insert_ohlc_data(self):
+    def insert_ohlc_data(self, data):
         """Insert OHLC data into 'ohlc' table."""
         log.info(f"{self.symbol} OHLC data: adding to database.")
 
         records = []
 
-        for i in self.data:
+        for i in data:
             record = OHLC(
                 symbol_date=f"{self.symbol} {i[0].date()}",
                 symbol=self.symbol,
