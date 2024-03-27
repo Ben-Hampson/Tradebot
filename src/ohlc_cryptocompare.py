@@ -32,8 +32,6 @@ class CryptoCompareOHLC(OHLCUpdater):
             If None, will get data from the earliest possible date.
         """
         self.symbol = symbol
-        self.start_date = start_date
-        self.end_date = end_date
         self.instrument = get_instrument(symbol)
 
     def update_ohlc_data(self):
@@ -41,20 +39,22 @@ class CryptoCompareOHLC(OHLCUpdater):
         latest_ohlc = get_latest_record(self.symbol, OHLC)
 
         if not latest_ohlc:
-            self.get_ohlc_data(dt.date.today(), None)
-            self.insert_ohlc_data()
+            end_date = dt.date.today()
+            start_date = None
         elif latest_ohlc.date.date() == dt.date.today() - dt.timedelta(1):
             # Get data for 1 day (today)
-            self.get_ohlc_data(dt.date.today(), latest_ohlc.date.date())
-            self.insert_ohlc_data()
+            end_date = dt.date.today()
+            start_date = latest_ohlc.date.date()
         elif latest_ohlc.date.date() != dt.date.today():
             # Get date for >1 day
-            self.get_ohlc_data(
-                dt.date.today(), latest_ohlc.date.date() + dt.timedelta(1)
-            )
-            self.insert_ohlc_data()
+            end_date = dt.date.today()
+            start_date = latest_ohlc.date.date() + dt.timedelta(1)
         else:
             log.info(f"{self.symbol} data is already up to date. No records added.")
+            return
+
+        self.get_ohlc_data(end_date, start_date)
+        self.insert_ohlc_data()
 
     def get_ohlc_data(self, end_date: dt.date, start_date: Optional[dt.date]):
         """Get OHLC data for an Instrument between two dates.
