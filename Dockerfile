@@ -1,4 +1,4 @@
-FROM python:3.8-slim as python-base
+FROM python:3.9-slim as python-base
 
     # Shows Python logs?
 ENV PYTHONUNBUFFERED=1 \
