@@ -20,7 +20,7 @@ dydx-v3-python = "^2.0.1"
 easyib = "^0.2.5"
 
 [tool.poetry.dev-dependencies]
-black = "^22.3"
+black = "^24.3"
 isort = "^5.10.1"
 pylint = "^2.12.2"
 pytest = "^4.4.1"
